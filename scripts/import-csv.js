@@ -1,17 +1,17 @@
 #!/usr/bin/env node
-// Impor SEKALI dari CSV (ekspor Google Sheet) ke Firestore.
+// Impor SEKALI dari CSV (ekspor Google Sheet) ke Postgres (Neon).
 //
 //   node scripts/import-csv.js --pemohon data/pemohon.csv --jadwal data/jadwal.csv            (uji coba, tidak menulis)
 //   node scripts/import-csv.js --pemohon data/pemohon.csv --jadwal data/jadwal.csv --commit   (benar-benar menulis)
 //
-// Butuh env FIREBASE_SERVICE_ACCOUNT (atau FIRESTORE_EMULATOR_HOST untuk uji lokal).
-// Menolak jalan bila Firestore sudah berisi data, kecuali --force.
+// Butuh env DATABASE_URL (connection string Neon). Skema (db/schema.sql) harus sudah dijalankan.
+// Menolak jalan bila tabel pemohon/jadwal sudah berisi data, kecuali --force.
 const fs = require('fs');
 const { bacaCsv } = require('../lib/csv');
 const { KODE_RE, normalisasiHp } = require('../lib/validate');
 const { lokasiByNama, JENIS_BAP, STATUS } = require('../lib/config');
 const { validIso } = require('../lib/tanggal');
-const { jadwalId } = require('../lib/booking');
+const jadwalId = (t, lok) => `${t}|${lok}`;
 
 function tabel(text) {
   const rows = bacaCsv(text);
@@ -38,7 +38,7 @@ function waktuDaftar(s, fallbackIso) {
 // Fungsi murni: CSV -> dokumen yang akan ditulis + daftar masalah.
 function siapkan(pemText, jadText) {
   const err = [], warn = [];
-  const jadwal = new Map(), pemohon = [], urutan = new Map(), kunci = new Map();
+  const jadwal = new Map(), pemohon = [], urutan = new Map(), hpAktif = new Map();
 
   tabel(jadText).forEach((r, i) => {
     const baris = `jadwal baris ${i + 2}`;
@@ -70,12 +70,12 @@ function siapkan(pemText, jadText) {
       if (!jadwal.has(jid)) { jadwal.set(jid, { tanggal: t, lokasi: lok.nama, kuota: 0, terpakai: 0, tutup: true }); warn.push(`${baris} ${kode}: jadwal ${t} ${lok.nama} tidak ada di CSV jadwal - dibuat dalam keadaan tutup`); }
       jadwal.get(jid).terpakai++;
       const kid = `${t}_${hp}`;
-      if (kunci.has(kid)) warn.push(`${baris} ${kode}: HP ${hp} sudah punya booking aktif lain di ${t} (${kunci.get(kid)}) - data lama, tetap diimpor`);
-      else kunci.set(kid, kode);
+      if (hpAktif.has(kid)) warn.push(`${baris} ${kode}: HP ${hp} sudah punya booking aktif lain di ${t} (${hpAktif.get(kid)}) - data lama, tetap diimpor`);
+      else hpAktif.set(kid, kode);
     }
   });
   for (const j of jadwal.values()) if (j.kuota < j.terpakai) { if (j.tutup) j.kuota = j.terpakai; else warn.push(`jadwal ${j.tanggal} ${j.lokasi}: terpakai ${j.terpakai} > kuota ${j.kuota}`); }
-  return { err, warn, jadwal, pemohon, urutan, kunci };
+  return { err, warn, jadwal, pemohon, urutan };
 }
 
 async function main() {
@@ -83,28 +83,40 @@ async function main() {
   const fp = arg('--pemohon'), fj = arg('--jadwal'), commit = a.includes('--commit'), force = a.includes('--force');
   if (!fp || !fj) { console.error('Pemakaian: node scripts/import-csv.js --pemohon pemohon.csv --jadwal jadwal.csv [--commit] [--force]'); process.exit(2); }
   const s = siapkan(fs.readFileSync(fp, 'utf8'), fs.readFileSync(fj, 'utf8'));
-  console.log(`Pemohon: ${s.pemohon.length} | Jadwal: ${s.jadwal.size} | Tanggal berurutan: ${s.urutan.size} | Kunci HP: ${s.kunci.size}`);
+  console.log(`Pemohon: ${s.pemohon.length} | Jadwal: ${s.jadwal.size} | Tanggal berurutan: ${s.urutan.size}`);
   s.warn.forEach((w) => console.log('PERINGATAN', w));
   s.err.forEach((e) => console.log('GALAT    ', e));
   if (s.err.length) { console.error(`\n${s.err.length} baris bermasalah. Perbaiki CSV lalu jalankan ulang. Tidak ada yang ditulis.`); process.exit(1); }
   if (!commit) { console.log('\nUji coba selesai (tidak ada yang ditulis). Tambahkan --commit untuk menulis.'); return; }
 
-  const { getDb, Timestamp } = require('../lib/firebase');
-  const db = getDb();
-  if (!force) {
-    for (const c of ['pemohon', 'jadwal']) {
-      if (!(await db.collection(c).limit(1).get()).empty) { console.error(`Koleksi "${c}" sudah berisi data. Impor dibatalkan (pakai --force bila yakin).`); process.exit(1); }
+  const { q, tx, tutup } = require('../lib/db');
+  try {
+    if (!force) {
+      for (const t of ['pemohon', 'jadwal']) {
+        if ((await q(`select 1 from ${t} limit 1`)).length) { console.error(`Tabel "${t}" sudah berisi data. Impor dibatalkan (pakai --force bila yakin).`); process.exit(1); }
+      }
     }
-  }
-  const tulis = [];
-  s.pemohon.forEach((p) => tulis.push([db.collection('pemohon').doc(p.kode), { ...p, dibuat: Timestamp.fromDate(p.dibuat || new Date()) }]));
-  s.jadwal.forEach((j, id) => tulis.push([db.collection('jadwal').doc(id), j]));
-  s.urutan.forEach((n, t) => tulis.push([db.collection('urutan').doc(t), { n }]));
-  s.kunci.forEach((kode, id) => tulis.push([db.collection('kunci').doc(id), { kode }]));
-  for (let i = 0; i < tulis.length; i += 400) {
-    const b = db.batch(); tulis.slice(i, i + 400).forEach(([ref, d]) => b.set(ref, d)); await b.commit();
-  }
-  console.log(`Selesai menulis ${tulis.length} dokumen.`);
+    await tx(async (query) => {
+      const J = [...s.jadwal.values()];
+      await query(`insert into jadwal (tanggal, lokasi, kuota, terpakai, tutup)
+        select * from unnest($1::date[], $2::text[], $3::int[], $4::int[], $5::boolean[])
+        on conflict (tanggal, lokasi) do update set kuota = excluded.kuota, terpakai = excluded.terpakai, tutup = excluded.tutup`,
+        [J.map((x) => x.tanggal), J.map((x) => x.lokasi), J.map((x) => x.kuota), J.map((x) => x.terpakai), J.map((x) => x.tutup)]);
+      for (let i = 0; i < s.pemohon.length; i += 500) {
+        const P = s.pemohon.slice(i, i + 500), col = (k) => P.map((x) => x[k]);
+        await query(`insert into pemohon (kode, nama, hp, email, jenis, lokasi, tanggal, jam, status, petugas, keterangan, dibuat)
+          select * from unnest($1::text[], $2::text[], $3::text[], $4::text[], $5::text[], $6::text[], $7::date[], $8::text[], $9::text[], $10::text[], $11::text[], $12::timestamptz[])
+          on conflict (kode) do update set nama = excluded.nama, hp = excluded.hp, email = excluded.email, jenis = excluded.jenis, lokasi = excluded.lokasi,
+            tanggal = excluded.tanggal, jam = excluded.jam, status = excluded.status, petugas = excluded.petugas, keterangan = excluded.keterangan, dibuat = excluded.dibuat`,
+          [col('kode'), col('nama'), col('hp'), col('email'), col('jenis'), col('lokasi'), col('tanggal'), col('jam'), col('status'), col('petugas'), col('keterangan'),
+            P.map((x) => (x.dibuat || new Date()).toISOString())]);
+      }
+      const U = [...s.urutan.entries()];
+      await query(`insert into urutan (tanggal, n) select * from unnest($1::date[], $2::int[])
+        on conflict (tanggal) do update set n = greatest(urutan.n, excluded.n)`, [U.map((x) => x[0]), U.map((x) => x[1])]);
+    });
+    console.log(`Selesai: ${s.pemohon.length} pemohon, ${s.jadwal.size} jadwal.`);
+  } finally { await tutup(); }
 }
 
 module.exports = { siapkan, tgl };

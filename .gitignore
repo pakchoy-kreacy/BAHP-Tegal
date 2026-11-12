@@ -5,9 +5,4 @@ node_modules/
 !.env.example
 *.csv
 data/
-*-service-account*.json
-serviceAccount*.json
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
-.firebase/
+

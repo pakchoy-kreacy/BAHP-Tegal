@@ -1,17 +1,13 @@
 // Publik: daftar tanggal + sisa kuota (30 hari ke depan). Tanpa data pribadi.
-const { getDb } = require('../lib/firebase');
+const { q } = require('../lib/db');
 const { route } = require('../lib/http');
 const { todayWIB, addDays, labelTanggal } = require('../lib/tanggal');
 const { HARI_KE_DEPAN } = require('../lib/config');
 
 module.exports = route(['GET'], async () => {
-  const hariIni = todayWIB();
-  const snap = await getDb().collection('jadwal')
-    .where('tanggal', '>=', hariIni).where('tanggal', '<=', addDays(hariIni, HARI_KE_DEPAN)).get();
-  return snap.docs.map((s) => s.data()).filter((j) => !j.tutup)
-    .sort((a, b) => a.tanggal.localeCompare(b.tanggal) || a.lokasi.localeCompare(b.lokasi))
-    .map((j) => ({
-      tanggal: j.tanggal, lokasi: j.lokasi, label: labelTanggal(j.tanggal),
-      sisa: Math.max(0, j.kuota - (j.terpakai || 0))
-    }));
+  const h = todayWIB();
+  const rows = await q(
+    `select tanggal, lokasi, greatest(kuota - terpakai, 0)::int as sisa from jadwal
+     where tanggal >= $1 and tanggal <= $2 and not tutup order by tanggal, lokasi`, [h, addDays(h, HARI_KE_DEPAN)]);
+  return rows.map((j) => ({ tanggal: j.tanggal, lokasi: j.lokasi, label: labelTanggal(j.tanggal), sisa: j.sisa }));
 }, { cache: 'public, s-maxage=10, stale-while-revalidate=20' });

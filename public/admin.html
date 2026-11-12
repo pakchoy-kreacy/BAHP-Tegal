@@ -60,7 +60,6 @@
 <header>
   <img src="logo-bhap.png" alt="BHAP">
   <h1>Admin BHAP</h1>
-  <span class="akun hidden" id="akun"></span>
   <button class="sek hidden" id="btnKeluar">Keluar</button>
 </header>
 <main>
@@ -68,8 +67,11 @@
 
   <section id="vLogin" class="kartu login">
     <h2>Masuk admin</h2>
-    <p class="muted" id="infoLogin">Login dengan akun Google yang sudah didaftarkan sebagai admin.</p>
-    <button id="btnLogin">Masuk dengan Google</button>
+    <p class="muted" id="infoLogin">Masukkan PIN admin.</p>
+    <form id="formLogin" autocomplete="off">
+      <input id="pinLogin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN" maxlength="64" style="width:100%;text-align:center;font-size:20px;letter-spacing:4px;margin-bottom:12px" aria-label="PIN admin">
+      <button id="btnLogin" type="submit" style="width:100%">Masuk</button>
+    </form>
   </section>
 
   <section id="vApp" class="hidden">
@@ -77,6 +79,7 @@
       <button data-t="pemohon" class="aktif">Pemohon</button>
       <button data-t="jadwal">Jadwal</button>
       <button data-t="rekap">Rekap</button>
+      <button data-t="pengaturan">Pengaturan</button>
     </div>
 
     <div id="t-pemohon">
@@ -105,11 +108,25 @@
       <div class="kartu filter" id="fRekap"></div>
       <div class="kartu scroll"><table id="tbRekap"></table></div>
     </div>
+
+    <div id="t-pengaturan" class="hidden">
+      <div class="kartu" style="max-width:420px">
+        <b>Ganti PIN admin</b>
+        <p class="muted">PIN baru 6 sampai 12 angka. Setelah diganti, perangkat lain harus login ulang.</p>
+        <form id="formPin" autocomplete="off">
+          <label class="muted" for="pinLama">PIN lama</label>
+          <input id="pinLama" type="password" inputmode="numeric" autocomplete="current-password" style="width:100%;margin-bottom:8px">
+          <label class="muted" for="pinBaru">PIN baru</label>
+          <input id="pinBaru" type="password" inputmode="numeric" autocomplete="new-password" maxlength="12" style="width:100%;margin-bottom:8px">
+          <label class="muted" for="pinUlang">Ulangi PIN baru</label>
+          <input id="pinUlang" type="password" inputmode="numeric" autocomplete="new-password" maxlength="12" style="width:100%;margin-bottom:12px">
+          <button type="submit">Simpan PIN</button>
+        </form>
+      </div>
+    </div>
   </section>
 </main>
 
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script>
 (function () {
   var LOKASI = ['Kantor Imigrasi Tegal', 'Beranda Imigrasi Brebes'];
@@ -146,11 +163,10 @@
 
   function api(path, opt) {
     opt = opt || {};
-    return auth.currentUser.getIdToken().then(function (tok) {
-      var init = { method: opt.method || 'GET', headers: { Authorization: 'Bearer ' + tok } };
-      if (opt.body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opt.body); }
-      return fetch(path, init);
-    }).then(function (r) {
+    var init = { method: opt.method || 'GET', headers: { 'X-Bhap': '1' }, credentials: 'same-origin' };
+    if (opt.body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opt.body); }
+    return fetch(path, init).then(function (r) {
+      if (r.status === 401 && path.indexOf('/api/admin/login') !== 0) { tampilLogin('Sesi berakhir. Masukkan PIN lagi.'); throw new Error('Sesi berakhir.'); }
       if (opt.raw && r.ok) return r;
       return r.json().then(function (res) { if (!res.ok) throw new Error(res.error); return res.data; });
     });
@@ -325,51 +341,53 @@
 
   // ---------- tab & login ----------
   function pilihTab(t) {
-    ['pemohon', 'jadwal', 'rekap'].forEach(function (x) { $('t-' + x).classList.toggle('hidden', x !== t); });
+    ['pemohon', 'jadwal', 'rekap', 'pengaturan'].forEach(function (x) { $('t-' + x).classList.toggle('hidden', x !== t); });
     Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('aktif', b.getAttribute('data-t') === t); });
     bersihPesan();
-    if (t === 'pemohon') muatPemohon(); else if (t === 'jadwal') muatJadwal(); else muatRekap();
+    if (t === 'pemohon') muatPemohon(); else if (t === 'jadwal') muatJadwal(); else if (t === 'rekap') muatRekap();
   }
 
-  function masuk(user) {
-    // Panggilan ini sekaligus mengecek allowlist email di server.
+  function tampilLogin(info) {
+    $('vApp').classList.add('hidden'); $('vLogin').classList.remove('hidden'); $('btnKeluar').classList.add('hidden');
+    $('infoLogin').textContent = info || 'Masukkan PIN admin.'; $('pinLogin').value = '';
+  }
+
+  function masuk() {
     api('/api/admin/otomatis').then(function (d) {
       libur = d.libur; gambarLibur();
       $('infoPola').textContent = 'Pola: ' + d.pola.map(function (p) {
         var hr = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
         return p.lokasi + ' ' + p.hari.map(function (i) { return hr[i]; }).join('/') + ' kuota ' + p.kuota;
       }).join('; ') + '. Jadwal yang sudah ada tidak diubah.';
-      $('akun').textContent = d.email; $('akun').classList.remove('hidden'); $('btnKeluar').classList.remove('hidden');
+      $('btnKeluar').classList.remove('hidden');
       $('vLogin').classList.add('hidden'); $('vApp').classList.remove('hidden');
       pilihTab('pemohon');
-    }).catch(function (e) {
-      $('infoLogin').textContent = e.message;
-      auth.signOut();
-    });
+    }).catch(function () { /* api() sudah menampilkan login */ });
   }
 
-  function mulai(cfg) {
-    firebase.initializeApp(cfg);
-    auth = firebase.auth();
-    initPemohon(); initJadwal(); initRekap();
-    Array.prototype.forEach.call($('tabs').children, function (b) { b.addEventListener('click', function () { pilihTab(b.getAttribute('data-t')); }); });
-    $('btnLogin').addEventListener('click', function () {
-      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function (e) { $('infoLogin').textContent = 'Login gagal: ' + e.message; });
-    });
-    $('btnKeluar').addEventListener('click', function () { auth.signOut(); });
-    auth.onAuthStateChanged(function (u) {
-      if (u) masuk(u);
-      else {
-        $('vApp').classList.add('hidden'); $('vLogin').classList.remove('hidden');
-        $('akun').classList.add('hidden'); $('btnKeluar').classList.add('hidden');
-      }
-    });
-  }
+  initPemohon(); initJadwal(); initRekap();
+  Array.prototype.forEach.call($('tabs').children, function (b) { b.addEventListener('click', function () { pilihTab(b.getAttribute('data-t')); }); });
 
-  fetch('/api/config').then(function (r) { return r.json(); }).then(function (res) {
-    if (!res.ok) throw new Error(res.error);
-    mulai(res.data);
-  }).catch(function (e) { $('infoLogin').textContent = e.message; $('btnLogin').disabled = true; });
+  $('formLogin').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = $('btnLogin'); btn.disabled = true;
+    api('/api/admin/login', { method: 'POST', body: { pin: $('pinLogin').value } })
+      .then(function () { $('pinLogin').value = ''; masuk(); })
+      .catch(function (err) { $('infoLogin').textContent = err.message; $('pinLogin').value = ''; })
+      .then(function () { btn.disabled = false; });
+  });
+  $('btnKeluar').addEventListener('click', function () {
+    api('/api/admin/login', { method: 'DELETE' }).then(function () { tampilLogin('Anda sudah keluar.'); });
+  });
+  $('formPin').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if ($('pinBaru').value !== $('pinUlang').value) return pesan('PIN baru dan ulangannya tidak sama.', true);
+    api('/api/admin/pin', { method: 'POST', body: { lama: $('pinLama').value, baru: $('pinBaru').value } })
+      .then(function () { $('formPin').reset(); pesan('PIN berhasil diganti.'); }).catch(gagal);
+  });
+
+  // sudah login (cookie masih berlaku)?
+  fetch('/api/admin/login', { credentials: 'same-origin' }).then(function (r) { return r.ok ? masuk() : tampilLogin(); }).catch(function () { tampilLogin(); });
 })();
 </script>
 </body>
