@@ -17,6 +17,6 @@ module.exports = route(['POST'], async ({ req, body }) => {
   return {
     kode: r.kode, nama: r.nama, jenis: r.jenis, tanggal: r.tanggal,
     tanggalLabel: labelTanggal(r.tanggal), lokasi: r.lokasi, status: r.status, waUrl: waAdminUrl(r),
-    dokumen: r.status === 'Terkonfirmasi' ? PESAN_DOKUMEN : ''
+    dokumen: PESAN_DOKUMEN
   };
 });

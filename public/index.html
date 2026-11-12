@@ -68,6 +68,8 @@
   td { padding: 7px 0; border-bottom: 1px solid #edf0f4; vertical-align: top; }
   td:first-child { color: var(--redup); width: 36%; }
   .btn-wa { background: var(--hijau); color: #fff; margin-top: 16px; }
+  .btn-sek { background: #fff; color: var(--navy); border: 2px solid var(--navy); margin-top: 10px; }
+  .panel-dok { background: var(--emas-muda, #f6edd3); border-radius: 12px; padding: 14px; margin-top: 12px; font-size: 14px; line-height: 1.55; white-space: pre-line; text-align: left; }
   .catatan { font-size: 13px; color: var(--redup); margin: 12px 0 0; }
   .btn-baru { background: transparent; color: var(--navy); border: 2px solid var(--navy); margin-top: 12px; }
 
@@ -150,8 +152,9 @@
         <tr><td>Lokasi</td><td id="hLokasi"></td></tr>
         <tr><td>Status</td><td id="hStatus"></td></tr>
       </table>
-      <a id="btnWa" class="tombol btn-wa" target="_blank" rel="noopener">Konfirmasi lewat WhatsApp</a>
-      <p class="catatan" id="hDokumen" style="white-space:pre-line;text-align:left"></p>
+      <button type="button" id="btnDok" class="tombol btn-wa" aria-expanded="false" aria-controls="panelDok">Lihat dokumen yang harus dibawa</button>
+      <div id="panelDok" class="panel-dok hidden"></div>
+      <a id="btnWa" class="tombol btn-sek" target="_blank" rel="noopener">Konfirmasi lewat WhatsApp</a>
       <p class="catatan">Kirim pesan yang sudah terisi otomatis, lalu datang sesuai hari yang dipilih dengan membawa kode booking ini.</p>
     </div>
     <button class="tombol btn-baru" onclick="location.reload()">Booking baru</button>
@@ -314,8 +317,12 @@
         el('hTanggal').textContent = r.tanggalLabel;
         el('hLokasi').textContent = r.lokasi;
         el('hStatus').textContent = r.status === 'Menunggu' ? 'Menunggu konfirmasi' : r.status;
-        el('hDokumen').textContent = r.dokumen || '';
-        el('hDokumen').classList.toggle('hidden', !r.dokumen);
+        el('panelDok').textContent = r.dokumen || '';
+        el('btnDok').onclick = function () {
+          var buka = el('panelDok').classList.toggle('hidden') === false;
+          el('btnDok').setAttribute('aria-expanded', buka);
+          el('btnDok').textContent = buka ? 'Sembunyikan dokumen' : 'Lihat dokumen yang harus dibawa';
+        };
         el('btnWa').href = r.waUrl;
         el('btnWa').textContent = r.status === 'Menunggu' ? 'Konfirmasi lewat WhatsApp' : 'Kirim detail lewat WhatsApp';
         el('viewForm').classList.add('hidden');
