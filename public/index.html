@@ -33,6 +33,8 @@
   .lokasi span { display: block; font-size: 12.5px; color: var(--redup); margin-top: 4px; }
   .lokasi a { display: block; margin-top: 10px; font-size: 13px; color: var(--navy-2); font-weight: 500; }
   .lokasi.aktif { border-color: var(--emas); background: var(--emas-muda); }
+  .peta { margin: -14px -14px 12px; height: 140px; border-radius: 10px 10px 0 0; overflow: hidden; background: #e8ecf2; }
+  .peta iframe { width: 100%; height: 100%; border: 0; pointer-events: none; display: block; }
   .lokasi .pilih { display: inline-block; margin-top: 12px; padding: 7px 14px; border-radius: 999px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 600; }
   .lokasi.aktif .pilih { background: var(--emas); color: var(--navy); }
   .lokasi.aktif .pilih::before { content: "\2713  "; }
@@ -88,13 +90,17 @@
   .navpil { display: flex; gap: 6px; background: #fff; border: 1px solid var(--garis); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
   .navpil a { flex: 1; text-align: center; padding: 10px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--navy); text-decoration: none; }
   .navpil a.aktif { background: var(--navy); color: #fff; }
+  .navpil { position: sticky; top: 8px; z-index: 5; box-shadow: 0 2px 10px rgba(11,42,85,.06); }
   .pisah { font-size: 13px; color: var(--redup); margin: 16px 0 6px; }
   .cek .baris2 { display: flex; gap: 8px; flex-wrap: wrap; }
   .cek .baris2 input, .cek .baris2 select { flex: 1 1 140px; }
-  .daftar { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13.5px; }
-  .daftar td { padding: 9px 4px; border-bottom: 1px solid var(--garis); vertical-align: top; }
-  .daftar td.kd { font-weight: 600; white-space: nowrap; }
-  .daftar .lok { color: var(--redup); font-size: 12.5px; }
+  .daftar { margin-top: 10px; }
+  .antre { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--garis); }
+  .antre:last-child { border-bottom: 0; }
+  .no-antre { width: 38px; height: 38px; border-radius: 10px; background: #eef1f6; color: var(--navy); font-weight: 700; display: grid; place-items: center; font-size: 13px; flex: none; }
+  .antre .isi { flex: 1; min-width: 0; }
+  .antre b { display: block; font-size: 14px; font-weight: 600; }
+  .antre .lok { color: var(--redup); font-size: 12.5px; }
   .st { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; background: #eef0f4; white-space: nowrap; }
   .st.Menunggu { background: #fff4d6; color: #7a5a00; } .st.Terkonfirmasi { background: #dff5e3; color: #14622b; }
   .st.Terjadwal { background: #e0ecff; color: #17428c; } .st.Selesai { background: #e6f6ec; color: #155d33; } .st.Dibatalkan { background: #fdecea; color: var(--merah); }
@@ -119,7 +125,8 @@
 </header>
 
 <main>
-  <nav class="navpil" aria-label="Menu"><a href="#" class="aktif">Booking</a><a href="#pantau">Pantau BAP</a></nav>
+  <nav class="navpil" aria-label="Menu"><a href="#booking" id="tabBooking" class="aktif">Booking</a><a href="#pantau" id="tabPantau">Pantau BAP</a></nav>
+  <div id="vBooking">
   <div id="viewForm">
     <section class="langkah">
       <h2><span class="no">1</span>Pilih lokasi pelayanan</h2>
@@ -176,7 +183,8 @@
     <button class="tombol btn-baru" onclick="location.reload()">Booking baru</button>
   </div>
 
-  <section class="langkah cek-wrap" id="pantau" style="margin-top:26px">
+  </div>
+  <section class="langkah cek-wrap hidden" id="pantau">
     <h2>Pantau BAP</h2>
     <div class="cek">
       <label for="kodeCek">Cek dengan kode booking</label>
@@ -211,9 +219,9 @@
   // Nama lokasi harus sama persis dengan LOKASI di lib/config.js
   var LOKASI = [
     { nama: 'Kantor Imigrasi Tegal', ket: 'Kantor Imigrasi Kelas II Non TPI Tegal',
-      maps: 'https://maps.app.goo.gl/neweo8fDsikbsg1r9' },
+      maps: 'https://maps.app.goo.gl/neweo8fDsikbsg1r9', q: 'Kantor Imigrasi Kelas II Non TPI Tegal' },
     { nama: 'Beranda Imigrasi Brebes', ket: 'Layanan imigrasi di Kabupaten Brebes',
-      maps: 'https://maps.app.goo.gl/5Aiyju7poaFPYc428' }
+      maps: 'https://maps.app.goo.gl/5Aiyju7poaFPYc428', q: 'Beranda Imigrasi Brebes' }
   ];
   // Tanggal yang tampil dibatasi sekian hari ke depan
   var HARI_KE_DEPAN = 30;
@@ -228,7 +236,9 @@
     LOKASI.forEach(function (l) {
       var b = document.createElement('div');
       b.className = 'lokasi'; b.tabIndex = 0; b.setAttribute('role', 'button');
-      b.innerHTML = '<b></b><span></span><a target="_blank" rel="noopener">Lihat di Google Maps</a><div class="pilih">Pilih lokasi ini</div>';
+      b.innerHTML = '<div class="peta"><iframe loading="lazy" tabindex="-1" referrerpolicy="no-referrer-when-downgrade"></iframe></div><b></b><span></span><a target="_blank" rel="noopener">Buka di Google Maps</a><div class="pilih">Pilih lokasi ini</div>';
+      b.querySelector('iframe').src = 'https://maps.google.com/maps?q=' + encodeURIComponent(l.q) + '&z=16&output=embed';
+      b.querySelector('iframe').title = 'Peta ' + l.nama;
       b.querySelector('b').textContent = l.nama;
       b.querySelector('span').textContent = l.ket;
       b.querySelector('a').href = l.maps;
@@ -331,15 +341,18 @@
         var d = res.data; out.textContent = '';
         if (!d.data.length) { out.textContent = 'Belum ada booking pada ' + d.tanggalLabel + '.'; return; }
         var cap = document.createElement('b'); cap.textContent = d.tanggalLabel + ' · ' + d.data.length + ' pemohon'; out.appendChild(cap);
-        var tb = document.createElement('table'); tb.className = 'daftar';
+        var ul = document.createElement('div'); ul.className = 'daftar';
         d.data.forEach(function (x) {
-          var tr = tb.insertRow();
-          var a = tr.insertCell(); a.className = 'kd'; a.textContent = x.kode.slice(-3);
-          var b = tr.insertCell(); b.textContent = x.nama;
-          var l = document.createElement('div'); l.className = 'lok'; l.textContent = x.lokasi; b.appendChild(l);
-          var c = tr.insertCell(); var s = document.createElement('span'); s.className = 'st ' + x.status; s.textContent = x.status; c.appendChild(s);
+          var row = document.createElement('div'); row.className = 'antre';
+          var no = document.createElement('span'); no.className = 'no-antre'; no.textContent = x.kode.slice(-3);
+          var isi = document.createElement('div'); isi.className = 'isi';
+          var nm = document.createElement('b'); nm.textContent = x.nama;
+          var lk = document.createElement('div'); lk.className = 'lok'; lk.textContent = x.lokasi.replace('Kantor Imigrasi ', '').replace('Beranda Imigrasi ', '');
+          isi.appendChild(nm); isi.appendChild(lk);
+          var s = document.createElement('span'); s.className = 'st ' + x.status; s.textContent = x.status;
+          row.appendChild(no); row.appendChild(isi); row.appendChild(s); ul.appendChild(row);
         });
-        out.appendChild(tb);
+        out.appendChild(ul);
       })
       .catch(function (e) { out.className = 'info salah'; out.textContent = e.message.replace(/^Error:\s*/, ''); })
       .then(function () { btn.disabled = false; });
@@ -347,7 +360,16 @@
   (function () {
     var d = new Date(Date.now() + 7 * 36e5); el('tglPantau').value = d.toISOString().slice(0, 10);
     var k = new URLSearchParams(location.search).get('kode');
-    if (k) { el('kodeCek').value = k; cekStatus(); setTimeout(function () { el('pantau').scrollIntoView(); }, 50); }
+    if (k) { el('kodeCek').value = k; cekStatus(); if (location.hash !== '#pantau') history.replaceState(null, '', location.pathname + location.search + '#pantau'); }
+    function tab() {
+      var p = location.hash === '#pantau';
+      el('vBooking').classList.toggle('hidden', p); el('pantau').classList.toggle('hidden', !p);
+      el('tabBooking').classList.toggle('aktif', !p); el('tabPantau').classList.toggle('aktif', p);
+      el('tabBooking').setAttribute('aria-current', p ? 'false' : 'page'); el('tabPantau').setAttribute('aria-current', p ? 'page' : 'false');
+      if (p && !el('hasilPantau').childNodes.length && !k) muatPantau();
+      window.scrollTo(0, 0);
+    }
+    window.addEventListener('hashchange', tab); tab();
   })();
   el('kodeCek').addEventListener('keydown', function (e) { if (e.key === 'Enter') cekStatus(); });
 
