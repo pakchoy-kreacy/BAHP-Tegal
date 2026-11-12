@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Admin BHAP</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --navy:#0b2a55; --navy-2:#143d78; --emas:#c9a13b; --emas-muda:#f6edd3; --latar:#f2f4f8; --garis:#d9dfe8; --teks:#142033; --redup:#5b6678; --hijau:#1f9d55; --merah:#b42318; }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:'Poppins',Arial,sans-serif; background:var(--latar); color:var(--teks); font-size:14px; }
+  header { background:#fff; border-bottom:4px solid var(--emas); padding:10px 16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  header img { height:44px; }
+  header h1 { font-size:16px; margin:0; color:var(--navy); flex:1; }
+  header .akun { font-size:12.5px; color:var(--redup); }
+  main { max-width:1000px; margin:0 auto; padding:16px; }
+  .hidden { display:none !important; }
+  .kartu { background:#fff; border:1px solid var(--garis); border-radius:12px; padding:14px; margin-bottom:12px; }
+  .login { max-width:420px; margin:60px auto; text-align:center; }
+  .login h2 { color:var(--navy); margin-top:0; }
+  button, input, select, textarea { font:inherit; }
+  input, select, textarea { padding:8px 10px; border:1px solid #c3cbd8; border-radius:8px; background:#fff; max-width:100%; }
+  button { padding:8px 14px; border:0; border-radius:8px; background:var(--navy); color:#fff; font-weight:600; cursor:pointer; }
+  button.sek { background:#fff; color:var(--navy); border:2px solid var(--navy); padding:6px 12px; }
+  button.bahaya { background:var(--merah); }
+  button.wa { background:var(--hijau); }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  button:focus-visible, input:focus-visible, select:focus-visible { outline:3px solid var(--emas); outline-offset:2px; }
+  .tab { display:flex; gap:6px; margin-bottom:12px; flex-wrap:wrap; }
+  .tab button { background:#fff; color:var(--navy); border:2px solid var(--garis); }
+  .tab button.aktif { background:var(--navy); color:#fff; border-color:var(--navy); }
+  .filter { display:flex; gap:8px; flex-wrap:wrap; align-items:flex-end; }
+  .filter label { display:block; font-size:12px; color:var(--redup); margin-bottom:3px; }
+  .pesan { padding:10px 12px; border-radius:8px; margin-bottom:12px; font-size:13.5px; }
+  .pesan.ok { background:#e6f6ec; color:#155d33; }
+  .pesan.err { background:#fdecea; color:var(--merah); }
+  .muted { color:var(--redup); font-size:13px; }
+  .baris-p { display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:8px 14px; }
+  .baris-p h3 { margin:0 0 2px; font-size:15px; color:var(--navy); }
+  .kode { font-weight:600; font-size:12.5px; color:var(--redup); }
+  .edit { grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap; align-items:center; border-top:1px solid #edf0f4; padding-top:10px; }
+  .edit input.ket { flex:1; min-width:160px; }
+  .lencana { display:inline-block; padding:2px 10px; border-radius:99px; font-size:12px; font-weight:600; background:#eef0f4; }
+  .lencana.Menunggu { background:#fff4d6; color:#7a5a00; } .lencana.Terjadwal { background:#e0ecff; color:#17428c; }
+  .lencana.Selesai { background:#e6f6ec; color:#155d33; } .lencana.Dibatalkan { background:#fdecea; color:var(--merah); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #edf0f4; vertical-align:middle; }
+  th { font-size:12px; color:var(--redup); font-weight:600; }
+  td.angka, th.angka { text-align:right; }
+  .scroll { overflow-x:auto; }
+  tr.tutup td { background:#f6f7f9; color:var(--redup); }
+  .chip { display:inline-flex; gap:6px; align-items:center; background:var(--emas-muda); border-radius:99px; padding:3px 6px 3px 12px; margin:3px 6px 3px 0; font-size:13px; }
+  .chip button { padding:0 8px; background:transparent; color:var(--merah); font-size:16px; line-height:1.4; }
+  @media (max-width:640px) { .baris-p { grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <img src="logo-bhap.png" alt="BHAP">
+  <h1>Admin BHAP</h1>
+  <span class="akun hidden" id="akun"></span>
+  <button class="sek hidden" id="btnKeluar">Keluar</button>
+</header>
+<main>
+  <div id="pesan" class="pesan hidden" role="status"></div>
+
+  <section id="vLogin" class="kartu login">
+    <h2>Masuk admin</h2>
+    <p class="muted" id="infoLogin">Login dengan akun Google yang sudah didaftarkan sebagai admin.</p>
+    <button id="btnLogin">Masuk dengan Google</button>
+  </section>
+
+  <section id="vApp" class="hidden">
+    <div class="tab" id="tabs">
+      <button data-t="pemohon" class="aktif">Pemohon</button>
+      <button data-t="jadwal">Jadwal</button>
+      <button data-t="rekap">Rekap</button>
+    </div>
+
+    <div id="t-pemohon">
+      <div class="kartu filter" id="fPemohon"></div>
+      <div id="listPemohon"></div>
+    </div>
+
+    <div id="t-jadwal" class="hidden">
+      <div class="kartu">
+        <b>Tambah tanggal</b>
+        <div class="filter" id="fTambah" style="margin-top:8px"></div>
+      </div>
+      <div class="kartu">
+        <b>Isi jadwal otomatis</b>
+        <p class="muted" id="infoPola"></p>
+        <div class="filter" id="fAuto"></div>
+        <p style="margin:12px 0 4px"><b>Hari libur</b> <span class="muted">(dilewati saat isi otomatis)</span></p>
+        <div id="chipLibur"></div>
+        <div class="filter" id="fLibur" style="margin-top:6px"></div>
+      </div>
+      <div class="kartu filter" id="fJadwal"></div>
+      <div class="kartu scroll"><table id="tbJadwal"></table></div>
+    </div>
+
+    <div id="t-rekap" class="hidden">
+      <div class="kartu filter" id="fRekap"></div>
+      <div class="kartu scroll"><table id="tbRekap"></table></div>
+    </div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+(function () {
+  var LOKASI = ['Kantor Imigrasi Tegal', 'Beranda Imigrasi Brebes'];
+  var STATUS = ['Menunggu', 'Terjadwal', 'Selesai', 'Dibatalkan'];
+  var auth = null, libur = [];
+
+  // Semua teks dari server dimasukkan lewat textContent (nama pemohon tidak dipercaya).
+  function h(tag, props) {
+    var e = document.createElement(tag);
+    Object.keys(props || {}).forEach(function (k) {
+      if (k === 'text') e.textContent = props[k];
+      else if (k.indexOf('on') === 0) e.addEventListener(k.slice(2), props[k]);
+      else if (k === 'class') e.className = props[k];
+      else e.setAttribute(k, props[k]);
+    });
+    for (var i = 2; i < arguments.length; i++) {
+      var c = arguments[i];
+      if (c == null) continue;
+      e.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+    return e;
+  }
+  function $(id) { return document.getElementById(id); }
+  function iso(d) { return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function tambahHari(n) { var d = new Date(); d.setDate(d.getDate() + n); return iso(d); }
+
+  var tPesan;
+  function pesan(teks, err) {
+    var p = $('pesan'); p.textContent = teks; p.className = 'pesan ' + (err ? 'err' : 'ok');
+    clearTimeout(tPesan); if (!err) tPesan = setTimeout(function () { p.className = 'pesan hidden'; }, 4000);
+    window.scrollTo(0, 0);
+  }
+  function bersihPesan() { $('pesan').className = 'pesan hidden'; }
+
+  function api(path, opt) {
+    opt = opt || {};
+    return auth.currentUser.getIdToken().then(function (tok) {
+      var init = { method: opt.method || 'GET', headers: { Authorization: 'Bearer ' + tok } };
+      if (opt.body) { init.headers['Content-Type'] = 'application/json'; init.body = JSON.stringify(opt.body); }
+      return fetch(path, init);
+    }).then(function (r) {
+      if (opt.raw && r.ok) return r;
+      return r.json().then(function (res) { if (!res.ok) throw new Error(res.error); return res.data; });
+    });
+  }
+  function qs(o) { return Object.keys(o).filter(function (k) { return o[k]; }).map(function (k) { return k + '=' + encodeURIComponent(o[k]); }).join('&'); }
+  function gagal(e) { pesan(e.message, true); }
+
+  function unduh(path, params) {
+    api(path + '?' + qs(params), { raw: true }).then(function (r) {
+      var m = /filename="([^"]+)"/.exec(r.headers.get('Content-Disposition') || '');
+      return r.blob().then(function (b) {
+        var a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = m ? m[1] : 'bhap.csv';
+        document.body.appendChild(a); a.click(); a.remove(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+      });
+    }).catch(gagal);
+  }
+
+  // ---------- komponen filter ----------
+  function fDate(id, label, val) { return h('div', {}, h('label', { for: id, text: label }), h('input', { id: id, type: 'date', value: val })); }
+  function fSelect(id, label, opts, semua) {
+    var s = h('select', { id: id }); if (semua) s.appendChild(h('option', { value: '', text: semua }));
+    opts.forEach(function (o) { s.appendChild(h('option', { value: o, text: o })); });
+    return h('div', {}, h('label', { for: id, text: label }), s);
+  }
+
+  // ---------- PEMOHON ----------
+  function initPemohon() {
+    var f = $('fPemohon');
+    f.appendChild(fDate('pDari', 'Dari tanggal', tambahHari(-7)));
+    f.appendChild(fDate('pSampai', 'Sampai tanggal', tambahHari(30)));
+    f.appendChild(fSelect('pLokasi', 'Lokasi', LOKASI, 'Semua'));
+    f.appendChild(fSelect('pStatus', 'Status', STATUS, 'Semua'));
+    f.appendChild(h('div', {}, h('label', { for: 'pQ', text: 'Cari nama / HP / kode' }), h('input', { id: 'pQ', placeholder: 'ketik lalu Enter' })));
+    f.appendChild(h('button', { text: 'Tampilkan', onclick: function () { bersihPesan(); muatPemohon(); } }));
+    f.appendChild(h('button', { class: 'sek', text: 'Ekspor CSV', onclick: function () { unduh('/api/admin/export', pFilter({ jenis: 'pemohon' })); } }));
+    $('pQ').addEventListener('keydown', function (e) { if (e.key === 'Enter') muatPemohon(); });
+  }
+  function pFilter(extra) {
+    return Object.assign({ dari: $('pDari').value, sampai: $('pSampai').value, lokasi: $('pLokasi').value, status: $('pStatus').value, q: $('pQ').value.trim() }, extra || {});
+  }
+  function muatPemohon() {
+    var box = $('listPemohon'); box.textContent = 'Memuat...';
+    api('/api/admin/pemohon?' + qs(pFilter())).then(function (rows) {
+      box.textContent = '';
+      box.appendChild(h('p', { class: 'muted', text: rows.length + ' pemohon' }));
+      rows.forEach(function (r) { box.appendChild(kartuPemohon(r)); });
+    }).catch(function (e) { box.textContent = ''; gagal(e); });
+  }
+  function kartuPemohon(r) {
+    var st = h('select', {}); STATUS.forEach(function (s) { var o = h('option', { value: s, text: s }); if (s === r.status) o.selected = true; st.appendChild(o); });
+    var pet = h('input', { placeholder: 'Petugas pemeriksa', value: r.petugas, maxlength: '100' });
+    var ket = h('input', { class: 'ket', placeholder: 'Keterangan', value: r.keterangan, maxlength: '500' });
+    var simpan = h('button', { text: 'Simpan' });
+    var badge = h('span', { class: 'lencana ' + r.status, text: r.status });
+    simpan.addEventListener('click', function () {
+      simpan.disabled = true;
+      api('/api/admin/pemohon', { method: 'PATCH', body: { kode: r.kode, status: st.value, petugas: pet.value, keterangan: ket.value } })
+        .then(function (d) { r.status = d.status; badge.textContent = d.status; badge.className = 'lencana ' + d.status; pesan(r.kode + ' tersimpan.'); })
+        .catch(function (e) { st.value = r.status; gagal(e); })
+        .then(function () { simpan.disabled = false; });
+    });
+    var wa = h('button', { class: 'wa', text: 'WhatsApp', onclick: function () {
+      if (!r.wa) return pesan('Nomor HP tidak valid untuk WhatsApp.', true);
+      var teks = 'Halo ' + r.nama + ', kami dari BHAP Imigrasi Tegal terkait booking ' + r.kode + ' (' + r.jenis + ') pada ' + r.tanggalLabel + ' di ' + r.lokasi + '.';
+      window.open('https://wa.me/' + r.wa + '?text=' + encodeURIComponent(teks), '_blank', 'noopener');
+    } });
+    return h('div', { class: 'kartu baris-p' },
+      h('div', {}, h('h3', { text: r.nama }), h('div', { class: 'kode', text: r.kode }), h('div', { class: 'muted', text: r.hp })),
+      h('div', {}, h('div', { text: r.jenis }), h('div', { class: 'muted', text: r.tanggalLabel }), h('div', { class: 'muted', text: r.lokasi })),
+      h('div', {}, badge),
+      h('div', { class: 'edit' }, st, pet, ket, simpan, wa));
+  }
+
+  // ---------- JADWAL ----------
+  function initJadwal() {
+    var t = $('fTambah');
+    t.appendChild(fDate('jtTgl', 'Tanggal', tambahHari(1)));
+    t.appendChild(fSelect('jtLok', 'Lokasi', LOKASI));
+    t.appendChild(h('div', {}, h('label', { for: 'jtKuota', text: 'Kuota' }), h('input', { id: 'jtKuota', type: 'number', min: '0', max: '500', value: '8', style: 'width:80px' })));
+    t.appendChild(h('button', { text: 'Tambah', onclick: function () {
+      api('/api/admin/jadwal', { method: 'POST', body: { tanggal: $('jtTgl').value, lokasi: $('jtLok').value, kuota: $('jtKuota').value } })
+        .then(function () { pesan('Tanggal ditambahkan.'); muatJadwal(); }).catch(gagal);
+    } }));
+
+    var a = $('fAuto');
+    a.appendChild(h('div', {}, h('label', { for: 'jaHari', text: 'Isi untuk berapa hari ke depan' }), h('input', { id: 'jaHari', type: 'number', min: '1', max: '120', value: '60', style: 'width:90px' })));
+    a.appendChild(h('button', { text: 'Isi jadwal otomatis', onclick: function () {
+      api('/api/admin/otomatis', { method: 'POST', body: { hari: Number($('jaHari').value) } })
+        .then(function (d) { pesan('Menambah ' + d.ditambah + ' jadwal (' + d.sudahAda + ' sudah ada, ' + d.hariLiburDilewati + ' hari libur dilewati).'); muatJadwal(); }).catch(gagal);
+    } }));
+
+    var l = $('fLibur');
+    l.appendChild(h('input', { id: 'liburTgl', type: 'date' }));
+    l.appendChild(h('button', { class: 'sek', text: 'Tambah libur', onclick: function () {
+      var v = $('liburTgl').value; if (!v || libur.indexOf(v) !== -1) return;
+      simpanLibur(libur.concat([v]));
+    } }));
+
+    var f = $('fJadwal');
+    f.appendChild(fDate('jDari', 'Dari tanggal', tambahHari(0)));
+    f.appendChild(fDate('jSampai', 'Sampai tanggal', tambahHari(60)));
+    f.appendChild(h('button', { text: 'Tampilkan', onclick: function () { bersihPesan(); muatJadwal(); } }));
+  }
+  function simpanLibur(daftar) {
+    api('/api/admin/otomatis', { method: 'PUT', body: { libur: daftar } })
+      .then(function (d) { libur = d.libur; gambarLibur(); pesan('Hari libur disimpan.'); }).catch(gagal);
+  }
+  function gambarLibur() {
+    var c = $('chipLibur'); c.textContent = '';
+    if (!libur.length) c.appendChild(h('span', { class: 'muted', text: 'Belum ada.' }));
+    libur.forEach(function (t) {
+      c.appendChild(h('span', { class: 'chip' }, t, h('button', { 'aria-label': 'Hapus libur ' + t, text: '×', onclick: function () { simpanLibur(libur.filter(function (x) { return x !== t; })); } })));
+    });
+  }
+  function muatJadwal() {
+    api('/api/admin/jadwal?' + qs({ dari: $('jDari').value, sampai: $('jSampai').value })).then(function (rows) {
+      var tb = $('tbJadwal'); tb.textContent = '';
+      tb.appendChild(h('thead', {}, h('tr', {}, h('th', { text: 'Tanggal' }), h('th', { text: 'Lokasi' }), h('th', { class: 'angka', text: 'Terisi' }), h('th', { text: 'Kuota' }), h('th', { text: 'Aksi' }))));
+      var body = h('tbody'); tb.appendChild(body);
+      if (!rows.length) body.appendChild(h('tr', {}, h('td', { colspan: '5', class: 'muted', text: 'Belum ada jadwal pada rentang ini.' })));
+      rows.forEach(function (j) { body.appendChild(barisJadwal(j)); });
+    }).catch(gagal);
+  }
+  function barisJadwal(j) {
+    var kuota = h('input', { type: 'number', min: '0', max: '500', value: String(j.kuota), style: 'width:76px' });
+    var aksi = h('td', { style: 'white-space:nowrap' },
+      h('button', { class: 'sek', text: 'Simpan kuota', onclick: function () {
+        api('/api/admin/jadwal', { method: 'PATCH', body: { tanggal: j.tanggal, lokasi: j.lokasi, kuota: kuota.value } }).then(function () { pesan('Kuota disimpan.'); muatJadwal(); }).catch(gagal);
+      } }), ' ',
+      h('button', { class: 'sek', text: j.tutup ? 'Buka' : 'Tutup', onclick: function () {
+        api('/api/admin/jadwal', { method: 'PATCH', body: { tanggal: j.tanggal, lokasi: j.lokasi, tutup: !j.tutup } }).then(function () { muatJadwal(); }).catch(gagal);
+      } }), ' ',
+      h('button', { class: 'bahaya', text: 'Hapus', onclick: function () {
+        if (!confirm('Hapus ' + j.label + ' di ' + j.lokasi + '?')) return;
+        api('/api/admin/jadwal?' + qs({ tanggal: j.tanggal, lokasi: j.lokasi }), { method: 'DELETE' }).then(function () { pesan('Jadwal dihapus.'); muatJadwal(); }).catch(gagal);
+      } }));
+    return h('tr', { class: j.tutup ? 'tutup' : '' },
+      h('td', { text: j.label + (j.tutup ? ' (ditutup)' : '') }), h('td', { text: j.lokasi }),
+      h('td', { class: 'angka', text: String(j.terpakai) }), h('td', {}, kuota), aksi);
+  }
+
+  // ---------- REKAP ----------
+  function initRekap() {
+    var f = $('fRekap');
+    f.appendChild(fDate('rDari', 'Dari tanggal', tambahHari(-30)));
+    f.appendChild(fDate('rSampai', 'Sampai tanggal', tambahHari(30)));
+    f.appendChild(fSelect('rLokasi', 'Lokasi', LOKASI, 'Semua'));
+    f.appendChild(h('button', { text: 'Tampilkan', onclick: function () { bersihPesan(); muatRekap(); } }));
+    f.appendChild(h('button', { class: 'sek', text: 'Ekspor CSV', onclick: function () { unduh('/api/admin/export', { jenis: 'rekap', dari: $('rDari').value, sampai: $('rSampai').value, lokasi: $('rLokasi').value }); } }));
+  }
+  function muatRekap() {
+    api('/api/admin/rekap?' + qs({ dari: $('rDari').value, sampai: $('rSampai').value, lokasi: $('rLokasi').value })).then(function (rows) {
+      var kol = ['kuota', 'menunggu', 'terjadwal', 'selesai', 'dibatalkan', 'aktif'];
+      var tb = $('tbRekap'); tb.textContent = '';
+      var tr = h('tr', {}, h('th', { text: 'Tanggal' }), h('th', { text: 'Lokasi' }));
+      kol.forEach(function (k) { tr.appendChild(h('th', { class: 'angka', text: k.charAt(0).toUpperCase() + k.slice(1) })); });
+      tb.appendChild(h('thead', {}, tr));
+      var body = h('tbody'), tot = {}; kol.forEach(function (k) { tot[k] = 0; }); tb.appendChild(body);
+      rows.forEach(function (r) {
+        var x = h('tr', {}, h('td', { text: r.tanggal }), h('td', { text: r.lokasi }));
+        kol.forEach(function (k) { tot[k] += r[k]; x.appendChild(h('td', { class: 'angka', text: String(r[k]) })); });
+        body.appendChild(x);
+      });
+      if (!rows.length) body.appendChild(h('tr', {}, h('td', { colspan: '8', class: 'muted', text: 'Tidak ada data.' })));
+      else {
+        var t = h('tr', { style: 'font-weight:700' }, h('td', { text: 'Total' }), h('td', { text: '' }));
+        kol.forEach(function (k) { t.appendChild(h('td', { class: 'angka', text: String(tot[k]) })); });
+        body.appendChild(t);
+      }
+    }).catch(gagal);
+  }
+
+  // ---------- tab & login ----------
+  function pilihTab(t) {
+    ['pemohon', 'jadwal', 'rekap'].forEach(function (x) { $('t-' + x).classList.toggle('hidden', x !== t); });
+    Array.prototype.forEach.call($('tabs').children, function (b) { b.classList.toggle('aktif', b.getAttribute('data-t') === t); });
+    bersihPesan();
+    if (t === 'pemohon') muatPemohon(); else if (t === 'jadwal') muatJadwal(); else muatRekap();
+  }
+
+  function masuk(user) {
+    // Panggilan ini sekaligus mengecek allowlist email di server.
+    api('/api/admin/otomatis').then(function (d) {
+      libur = d.libur; gambarLibur();
+      $('infoPola').textContent = 'Pola: ' + d.pola.map(function (p) {
+        var hr = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+        return p.lokasi + ' ' + p.hari.map(function (i) { return hr[i]; }).join('/') + ' kuota ' + p.kuota;
+      }).join('; ') + '. Jadwal yang sudah ada tidak diubah.';
+      $('akun').textContent = d.email; $('akun').classList.remove('hidden'); $('btnKeluar').classList.remove('hidden');
+      $('vLogin').classList.add('hidden'); $('vApp').classList.remove('hidden');
+      pilihTab('pemohon');
+    }).catch(function (e) {
+      $('infoLogin').textContent = e.message;
+      auth.signOut();
+    });
+  }
+
+  function mulai(cfg) {
+    firebase.initializeApp(cfg);
+    auth = firebase.auth();
+    initPemohon(); initJadwal(); initRekap();
+    Array.prototype.forEach.call($('tabs').children, function (b) { b.addEventListener('click', function () { pilihTab(b.getAttribute('data-t')); }); });
+    $('btnLogin').addEventListener('click', function () {
+      auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(function (e) { $('infoLogin').textContent = 'Login gagal: ' + e.message; });
+    });
+    $('btnKeluar').addEventListener('click', function () { auth.signOut(); });
+    auth.onAuthStateChanged(function (u) {
+      if (u) masuk(u);
+      else {
+        $('vApp').classList.add('hidden'); $('vLogin').classList.remove('hidden');
+        $('akun').classList.add('hidden'); $('btnKeluar').classList.add('hidden');
+      }
+    });
+  }
+
+  fetch('/api/config').then(function (r) { return r.json(); }).then(function (res) {
+    if (!res.ok) throw new Error(res.error);
+    mulai(res.data);
+  }).catch(function (e) { $('infoLogin').textContent = e.message; $('btnLogin').disabled = true; });
+})();
+</script>
+</body>
+</html>

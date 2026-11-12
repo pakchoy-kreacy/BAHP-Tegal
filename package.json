@@ -1,0 +1,18 @@
+{
+  "name": "bhap-tegal",
+  "version": "2.0.0",
+  "private": true,
+  "description": "BHAP! Booking Hari Acara Pemeriksaan - Vercel + Firebase",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "test:unit": "node --test test/unit.test.js",
+    "test:emulator": "firebase emulators:exec --only firestore,auth --project demo-bhap \"node --test test/integration.test.js\"",
+    "import": "node scripts/import-csv.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  },
+  "devDependencies": {
+    "firebase-tools": "^14.0.0"
+  }
+}

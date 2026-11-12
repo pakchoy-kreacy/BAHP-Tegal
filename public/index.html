@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BHAP! Booking Hari Acara Pemeriksaan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0b2a55; --navy-2: #143d78; --emas: #c9a13b; --emas-muda: #f6edd3;
+    --latar: #f2f4f8; --garis: #d9dfe8; --teks: #142033; --redup: #5b6678; --hijau: #1f9d55; --merah: #b42318;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Poppins', Arial, sans-serif; background: var(--latar); color: var(--teks); font-size: 15px; }
+
+  header { background: #fff; border-bottom: 4px solid var(--emas); }
+  .logo-bar { max-width: 720px; margin: 0 auto; padding: 14px 16px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; }
+  .logo-kiri { justify-self: start; height: 64px; }
+  .logo-kanan { justify-self: end; height: 64px; }
+  .logo-tengah { height: 76px; max-width: 100%; }
+  h1.judul { position: absolute; left: -9999px; }
+
+  main { max-width: 560px; margin: 0 auto; padding: 20px 16px 8px; }
+  .langkah { margin-bottom: 22px; }
+  .langkah h2 { font-size: 16px; font-weight: 600; color: var(--navy); margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
+  .no { width: 26px; height: 26px; border-radius: 50%; background: var(--navy); color: #fff; font-size: 13px; display: grid; place-items: center; flex: none; }
+  .langkah.terkunci { opacity: .45; pointer-events: none; }
+
+  .lokasi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .lokasi { background: #fff; border: 2px solid var(--garis); border-radius: 12px; padding: 14px; cursor: pointer; text-align: left; font: inherit; color: inherit; }
+  .lokasi b { display: block; font-size: 15px; color: var(--navy); line-height: 1.3; }
+  .lokasi span { display: block; font-size: 12.5px; color: var(--redup); margin-top: 4px; }
+  .lokasi a { display: block; margin-top: 10px; font-size: 13px; color: var(--navy-2); font-weight: 500; }
+  .lokasi.aktif { border-color: var(--emas); background: var(--emas-muda); }
+  .lokasi .pilih { display: inline-block; margin-top: 12px; padding: 7px 14px; border-radius: 999px; background: var(--navy); color: #fff; font-size: 13px; font-weight: 600; }
+  .lokasi.aktif .pilih { background: var(--emas); color: var(--navy); }
+  .lokasi.aktif .pilih::before { content: "\2713  "; }
+
+  .tanggal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; }
+  .tgl { background: #fff; border: 2px solid var(--garis); border-radius: 12px; padding: 10px 8px; text-align: center; cursor: pointer; font: inherit; color: inherit; }
+  .tgl .hari { font-size: 12.5px; color: var(--redup); }
+  .tgl .angka { font-size: 22px; font-weight: 700; color: var(--navy); line-height: 1.2; }
+  .tgl .bln { font-size: 12.5px; }
+  .tgl .sisa { margin-top: 6px; font-size: 12px; font-weight: 500; color: var(--hijau); }
+  .tgl.aktif { border-color: var(--navy); background: var(--navy); }
+  .tgl.aktif .hari, .tgl.aktif .angka, .tgl.aktif .bln, .tgl.aktif .sisa { color: #fff; }
+  .tgl:disabled { cursor: not-allowed; background: #eef0f4; }
+  .tgl:disabled .sisa { color: var(--merah); }
+  .kosong { color: var(--redup); font-size: 14px; background: #fff; border-radius: 12px; padding: 14px; }
+
+  .form { background: #fff; border-radius: 12px; padding: 4px 14px 14px; border: 1px solid var(--garis); }
+  label { display: block; font-size: 13px; font-weight: 500; margin: 12px 0 5px; }
+  input, select { width: 100%; padding: 11px 12px; font: inherit; border: 1px solid #c3cbd8; border-radius: 9px; background: #fff; }
+  button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid var(--emas); outline-offset: 2px; }
+
+  .ringkas { font-size: 13.5px; color: var(--redup); margin: 0 0 10px; min-height: 20px; }
+  .ringkas b { color: var(--teks); }
+  .tombol { display: block; width: 100%; padding: 14px; font: inherit; font-size: 16px; font-weight: 600; border: 0; border-radius: 12px; cursor: pointer; text-align: center; text-decoration: none; }
+  #btnKirim { background: var(--navy); color: #fff; }
+  #btnKirim:disabled { background: #9aa6b8; cursor: not-allowed; }
+  .error { color: var(--merah); font-size: 14px; margin: 0 0 10px; }
+
+  .hasil { background: #fff; border-radius: 14px; border-top: 5px solid var(--emas); padding: 20px 16px; text-align: center; }
+  .hasil h2 { margin: 0; color: var(--navy); font-size: 18px; }
+  .kode { font-size: 24px; font-weight: 700; letter-spacing: .5px; color: var(--navy); margin: 10px 0 14px; padding: 10px; background: var(--emas-muda); border-radius: 10px; }
+  table { width: 100%; font-size: 14px; border-collapse: collapse; text-align: left; }
+  td { padding: 7px 0; border-bottom: 1px solid #edf0f4; vertical-align: top; }
+  td:first-child { color: var(--redup); width: 36%; }
+  .btn-wa { background: var(--hijau); color: #fff; margin-top: 16px; }
+  .catatan { font-size: 13px; color: var(--redup); margin: 12px 0 0; }
+  .btn-baru { background: transparent; color: var(--navy); border: 2px solid var(--navy); margin-top: 12px; }
+
+  footer { text-align: center; padding: 18px 16px 26px; }
+  footer img { height: 64px; max-width: 100%; }
+  footer p { font-size: 12px; color: var(--redup); margin: 6px 0 0; }
+  .hidden { display: none !important; }
+  .jebakan { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+  .cek { background: #fff; border: 1px solid var(--garis); border-radius: 12px; padding: 4px 14px 14px; margin-top: 8px; }
+  .cek .baris { display: flex; gap: 8px; }
+  .cek .baris input { text-transform: uppercase; }
+  .cek .baris button { width: auto; padding: 0 18px; background: var(--navy); color: #fff; }
+  .cek .info { font-size: 14px; margin: 12px 0 0; }
+  .cek .info.salah { color: var(--merah); }
+  .cek .info b { color: var(--navy); }
+
+  @media (max-width: 420px) {
+    .logo-kiri, .logo-kanan { height: 48px; }
+    .logo-tengah { height: 58px; }
+    .lokasi-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo-bar">
+    <img class="logo-kiri" src="logo-kementerian.png" alt="Logo Kementerian Imigrasi dan Pemasyarakatan">
+    <img class="logo-tengah" src="logo-bhap.png" alt="BHAP! Booking Hari Acara Pemeriksaan">
+    <img class="logo-kanan" src="logo-imigrasi.png" alt="Logo Imigrasi">
+  </div>
+  <h1 class="judul">BHAP! Booking Hari Acara Pemeriksaan</h1>
+</header>
+
+<main>
+  <div id="viewForm">
+    <section class="langkah">
+      <h2><span class="no">1</span>Pilih lokasi pelayanan</h2>
+      <div class="lokasi-grid" id="listLokasi"></div>
+    </section>
+
+    <section class="langkah terkunci" id="stepTanggal">
+      <h2><span class="no">2</span>Pilih hari kedatangan</h2>
+      <div id="listTanggal" class="kosong">Pilih lokasi dulu untuk melihat hari dan kuota.</div>
+    </section>
+
+    <section class="langkah terkunci" id="stepData">
+      <h2><span class="no">3</span>Isi data pemohon</h2>
+      <div class="form">
+        <label for="nama">Nama lengkap</label>
+        <input id="nama" autocomplete="name" placeholder="Sesuai identitas">
+        <label for="hp">No. HP aktif (WhatsApp)</label>
+        <input id="hp" type="tel" inputmode="numeric" autocomplete="tel" placeholder="08xxxxxxxxxx">
+        <label for="jenis">Jenis BAP</label>
+        <select id="jenis">
+          <option value="">Pilih jenis BAP</option>
+          <option value="PASPOR HILANG">Paspor hilang</option>
+          <option value="PASPOR RUSAK">Paspor rusak</option>
+        </select>
+        <div class="jebakan" aria-hidden="true">
+          <label for="website">Jangan diisi</label>
+          <input id="website" name="website" tabindex="-1" autocomplete="off">
+        </div>
+      </div>
+    </section>
+
+    <p class="ringkas" id="ringkasan"></p>
+    <p class="error" id="pesanError"></p>
+    <button class="tombol" id="btnKirim" onclick="kirim()" disabled>Booking sekarang</button>
+  </div>
+
+  <div id="viewHasil" class="hidden">
+    <div class="hasil">
+      <h2>Booking tersimpan</h2>
+      <div class="kode" id="hKode"></div>
+      <table>
+        <tr><td>Nama</td><td id="hNama"></td></tr>
+        <tr><td>Jenis BAP</td><td id="hJenis"></td></tr>
+        <tr><td>Hari</td><td id="hTanggal"></td></tr>
+        <tr><td>Lokasi</td><td id="hLokasi"></td></tr>
+        <tr><td>Status</td><td>Menunggu konfirmasi</td></tr>
+      </table>
+      <a id="btnWa" class="tombol btn-wa" target="_blank" rel="noopener">Konfirmasi lewat WhatsApp</a>
+      <p class="catatan">Kirim pesan yang sudah terisi otomatis, lalu datang sesuai hari yang dipilih dengan membawa kode booking ini.</p>
+    </div>
+    <button class="tombol btn-baru" onclick="location.reload()">Booking baru</button>
+  </div>
+
+  <section class="langkah cek-wrap" style="margin-top:26px">
+    <h2>Cek status booking</h2>
+    <div class="cek">
+      <label for="kodeCek">Kode booking</label>
+      <div class="baris">
+        <input id="kodeCek" placeholder="BAP-20261120-001" autocomplete="off">
+        <button type="button" class="tombol" id="btnCek" onclick="cekStatus()">Cek</button>
+      </div>
+      <p class="info" id="hasilCek" role="status"></p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <img src="logo-imigrasi-untuk-rakyat.png" alt="Imigrasi untuk Rakyat">
+  <p>Kantor Imigrasi Kelas II Non TPI Tegal</p>
+</footer>
+
+<script>
+  // API ada di domain yang sama (Vercel API routes).
+  // Nama lokasi harus sama persis dengan LOKASI di lib/config.js
+  var LOKASI = [
+    { nama: 'Kantor Imigrasi Tegal', ket: 'Kantor Imigrasi Kelas II Non TPI Tegal',
+      maps: 'https://maps.app.goo.gl/neweo8fDsikbsg1r9' },
+    { nama: 'Beranda Imigrasi Brebes', ket: 'Layanan imigrasi di Kabupaten Brebes',
+      maps: 'https://maps.app.goo.gl/5Aiyju7poaFPYc428' }
+  ];
+  // Tanggal yang tampil dibatasi sekian hari ke depan
+  var HARI_KE_DEPAN = 30;
+  var BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var semuaJadwal = null, lokasiDipilih = null, jadwalDipilih = null;
+
+  function el(id) { return document.getElementById(id); }
+
+  window.onload = function () {
+    var box = el('listLokasi');
+    LOKASI.forEach(function (l) {
+      var b = document.createElement('div');
+      b.className = 'lokasi'; b.tabIndex = 0; b.setAttribute('role', 'button');
+      b.innerHTML = '<b></b><span></span><a target="_blank" rel="noopener">Lihat di Google Maps</a><div class="pilih">Pilih lokasi ini</div>';
+      b.querySelector('b').textContent = l.nama;
+      b.querySelector('span').textContent = l.ket;
+      b.querySelector('a').href = l.maps;
+      b.querySelector('a').addEventListener('click', function (e) { e.stopPropagation(); });
+      var pilih = function () {
+        document.querySelectorAll('.lokasi').forEach(function (x) {
+          x.classList.remove('aktif'); x.querySelector('.pilih').textContent = 'Pilih lokasi ini';
+        });
+        b.classList.add('aktif'); b.querySelector('.pilih').textContent = 'Dipilih';
+        lokasiDipilih = l.nama; jadwalDipilih = null;
+        tampilTanggal(); perbarui();
+      };
+      b.addEventListener('click', pilih);
+      b.addEventListener('keydown', function (e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pilih(); } });
+      box.appendChild(b);
+    });
+    muatJadwal();
+    ['nama', 'hp', 'jenis'].forEach(function (id) { el(id).addEventListener('input', perbarui); });
+  };
+
+  function muatJadwal(lalu) {
+    fetch('/api/jadwal')
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error);
+        semuaJadwal = res.data;
+        if (lokasiDipilih) tampilTanggal();
+        if (lalu) lalu();
+      })
+      .catch(function (e) {
+        el('stepTanggal').classList.remove('terkunci');
+        el('listTanggal').className = 'kosong';
+        el('listTanggal').textContent = 'Jadwal gagal dimuat: ' + e.message;
+      });
+  }
+
+  function tampilTanggal() {
+    el('stepTanggal').classList.remove('terkunci');
+    var box = el('listTanggal');
+    if (!semuaJadwal) { box.className = 'kosong'; box.textContent = 'Memuat jadwal...'; return; }
+    var batas = new Date(); batas.setHours(0, 0, 0, 0); batas.setDate(batas.getDate() + HARI_KE_DEPAN);
+    var list = semuaJadwal.filter(function (j) {
+      var p = j.tanggal.split('-').map(Number);
+      return j.lokasi.toLowerCase() === lokasiDipilih.toLowerCase() && new Date(p[0], p[1] - 1, p[2]) <= batas;
+    });
+    if (!list.length) { box.className = 'kosong'; box.textContent = 'Belum ada jadwal di lokasi ini. Coba lokasi lain.'; return; }
+    box.className = 'tanggal-grid'; box.innerHTML = '';
+    list.forEach(function (j) {
+      var p = j.tanggal.split('-').map(Number), dt = new Date(p[0], p[1] - 1, p[2]);
+      var btn = document.createElement('button');
+      btn.type = 'button'; btn.className = 'tgl'; btn.disabled = j.sisa <= 0;
+      btn.innerHTML = '<div class="hari">' + HARI[dt.getDay()] + '</div><div class="angka">' + p[2] +
+        '</div><div class="bln">' + BULAN[p[1] - 1] + ' ' + p[0] + '</div><div class="sisa">' +
+        (j.sisa > 0 ? 'Sisa ' + j.sisa + ' kuota' : 'Kuota penuh') + '</div>';
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.tgl').forEach(function (x) { x.classList.remove('aktif'); });
+        btn.classList.add('aktif'); jadwalDipilih = j; perbarui();
+      });
+      box.appendChild(btn);
+    });
+  }
+
+  function perbarui() {
+    el('stepData').classList.toggle('terkunci', !jadwalDipilih);
+    var lengkap = jadwalDipilih && el('nama').value.trim() && el('hp').value.trim() && el('jenis').value;
+    el('btnKirim').disabled = !lengkap;
+    el('ringkasan').innerHTML = jadwalDipilih
+      ? 'Jadwal kamu: <b>' + jadwalDipilih.label + '</b> di <b>' + jadwalDipilih.lokasi + '</b>' : '';
+  }
+
+  function cekStatus() {
+    var kode = el('kodeCek').value.trim(), out = el('hasilCek'), btn = el('btnCek');
+    out.className = 'info'; out.textContent = '';
+    if (!kode) { out.className = 'info salah'; out.textContent = 'Isi kode booking dulu.'; return; }
+    btn.disabled = true;
+    fetch('/api/status?kode=' + encodeURIComponent(kode))
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error);
+        var d = res.data;
+        out.textContent = '';
+        [['Kode', d.kode], ['Status', d.status], ['Hari', d.tanggalLabel], ['Lokasi', d.lokasi]].forEach(function (p, i) {
+          if (i) out.appendChild(document.createElement('br'));
+          out.appendChild(document.createTextNode(p[0] + ': '));
+          var b = document.createElement('b'); b.textContent = p[1]; out.appendChild(b);
+        });
+      })
+      .catch(function (e) { out.className = 'info salah'; out.textContent = e.message.replace(/^Error:\s*/, ''); })
+      .then(function () { btn.disabled = false; });
+  }
+  el('kodeCek').addEventListener('keydown', function (e) { if (e.key === 'Enter') cekStatus(); });
+
+  function kirim() {
+    el('pesanError').textContent = '';
+    var btn = el('btnKirim');
+    btn.disabled = true; btn.textContent = 'Menyimpan booking...';
+    fetch('/api/booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nama: el('nama').value, hp: el('hp').value, jenis: el('jenis').value,
+        tanggal: jadwalDipilih.tanggal, lokasi: jadwalDipilih.lokasi,
+        website: el('website').value
+      })
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error);
+        var r = res.data;
+        el('hKode').textContent = r.kode;
+        el('hNama').textContent = r.nama;
+        el('hJenis').textContent = r.jenis;
+        el('hTanggal').textContent = r.tanggalLabel;
+        el('hLokasi').textContent = r.lokasi;
+        el('btnWa').href = r.waUrl;
+        el('viewForm').classList.add('hidden');
+        el('viewHasil').classList.remove('hidden');
+        window.scrollTo(0, 0);
+      })
+      .catch(function (e) {
+        el('pesanError').textContent = e.message.replace(/^Error:\s*/, '');
+        btn.textContent = 'Booking sekarang';
+        jadwalDipilih = null;
+        muatJadwal(perbarui);
+      });
+  }
+</script>
+</body>
+</html>
