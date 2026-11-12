@@ -147,7 +147,7 @@
         <tr><td>Jenis BAP</td><td id="hJenis"></td></tr>
         <tr><td>Hari</td><td id="hTanggal"></td></tr>
         <tr><td>Lokasi</td><td id="hLokasi"></td></tr>
-        <tr><td>Status</td><td>Menunggu konfirmasi</td></tr>
+        <tr><td>Status</td><td id="hStatus"></td></tr>
       </table>
       <a id="btnWa" class="tombol btn-wa" target="_blank" rel="noopener">Konfirmasi lewat WhatsApp</a>
       <p class="catatan">Kirim pesan yang sudah terisi otomatis, lalu datang sesuai hari yang dipilih dengan membawa kode booking ini.</p>
@@ -310,7 +310,9 @@
         el('hJenis').textContent = r.jenis;
         el('hTanggal').textContent = r.tanggalLabel;
         el('hLokasi').textContent = r.lokasi;
+        el('hStatus').textContent = r.status === 'Menunggu' ? 'Menunggu konfirmasi' : r.status;
         el('btnWa').href = r.waUrl;
+        el('btnWa').textContent = r.status === 'Menunggu' ? 'Konfirmasi lewat WhatsApp' : 'Kirim detail lewat WhatsApp';
         el('viewForm').classList.add('hidden');
         el('viewHasil').classList.remove('hidden');
         window.scrollTo(0, 0);

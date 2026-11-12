@@ -12,8 +12,8 @@ module.exports = route(['GET'], async ({ req, res, query }) => {
   let csv, nama;
   if (query.jenis === 'rekap') {
     const rows = await ambilRekap({ ...r, lokasi: query.lokasi });
-    csv = keCsv(['TANGGAL', 'LOKASI', 'KUOTA', 'MENUNGGU', 'TERJADWAL', 'SELESAI', 'DIBATALKAN', 'AKTIF'],
-      rows.map((x) => [x.tanggal, x.lokasi, x.kuota, x.menunggu, x.terjadwal, x.selesai, x.dibatalkan, x.aktif]));
+    csv = keCsv(['TANGGAL', 'LOKASI', 'KUOTA', 'MENUNGGU', 'TERKONFIRMASI', 'TERJADWAL', 'SELESAI', 'DIBATALKAN', 'AKTIF'],
+      rows.map((x) => [x.tanggal, x.lokasi, x.kuota, x.menunggu, x.terkonfirmasi, x.terjadwal, x.selesai, x.dibatalkan, x.aktif]));
     nama = `rekap-bhap-${r.dari}_${r.sampai}.csv`;
   } else {
     const rows = await ambilPemohon({ ...r, lokasi: query.lokasi, status: query.status, q: query.q });

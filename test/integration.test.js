@@ -85,7 +85,7 @@ test('Satu HP aktif per tanggal: 4 booking paralel HP sama -> 1 berhasil', async
 test('hasil booking: kode, ringkasan, tombol WA admin terisi', async () => {
   const r = await call(h.booking, { method: 'POST', body: data(60, { tanggal: T2, nama: 'Siti Aminah' }) });
   assert.equal(r.status, 200); const d = r.json.data;
-  assert.match(d.kode, /^BAP-\d{8}-\d{3}$/); assert.equal(d.status, 'Menunggu');
+  assert.match(d.kode, /^BAP-\d{8}-\d{3}$/); assert.equal(d.status, 'Terkonfirmasi');
   assert.ok(d.waUrl.startsWith('https://wa.me/6285195565657?text='));
   const teks = decodeURIComponent(d.waUrl.split('text=')[1]);
   assert.ok(teks.includes(d.kode) && teks.includes('Siti Aminah') && teks.includes('PASPOR HILANG') && teks.includes(TEGAL));
@@ -220,7 +220,7 @@ test('rekap per hari & lokasi + ekspor CSV (aman dari formula injection)', async
   assert.equal(rk.status, 200);
   const r1 = rk.json.data.find((x) => x.tanggal === T1 && x.lokasi === TEGAL);
   assert.deepEqual([r1.kuota, r1.aktif, r1.dibatalkan], [3, 3, 1]);
-  assert.equal(r1.menunggu + r1.terjadwal + r1.selesai, r1.aktif);
+  assert.equal(r1.menunggu + r1.terkonfirmasi + r1.terjadwal + r1.selesai, r1.aktif);
   assert.equal((await call(h.booking, { method: 'POST', body: data(95, { tanggal: T3, lokasi: BREBES, nama: '=HYPERLINK("http://x.test","klik")' }) })).status, 200);
   const ex = await call(h.exp, { cookie: C, query: { jenis: 'pemohon', dari: T1, sampai: T3 } });
   assert.equal(ex.status, 200);

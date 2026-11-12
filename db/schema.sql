@@ -20,11 +20,15 @@ create table if not exists pemohon (
   tanggal    date not null,
   jam        text not null default '',
   status     text not null default 'Menunggu'
-             check (status in ('Menunggu', 'Terjadwal', 'Selesai', 'Dibatalkan')),
+             check (status in ('Menunggu', 'Terkonfirmasi', 'Terjadwal', 'Selesai', 'Dibatalkan')),
   petugas    text not null default '',
   keterangan text not null default '',
   dibuat     timestamptz not null default now()
 );
+-- Database lama: perluas daftar status (aman diulang).
+alter table pemohon drop constraint if exists pemohon_status_check;
+alter table pemohon add constraint pemohon_status_check
+  check (status in ('Menunggu', 'Terkonfirmasi', 'Terjadwal', 'Selesai', 'Dibatalkan'));
 create index if not exists pemohon_tanggal_idx on pemohon (tanggal);
 create index if not exists pemohon_hp_idx on pemohon (tanggal, hp);
 

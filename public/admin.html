@@ -43,7 +43,7 @@
   .edit { grid-column:1/-1; display:flex; gap:8px; flex-wrap:wrap; align-items:center; border-top:1px solid #edf0f4; padding-top:10px; }
   .edit input.ket { flex:1; min-width:160px; }
   .lencana { display:inline-block; padding:2px 10px; border-radius:99px; font-size:12px; font-weight:600; background:#eef0f4; }
-  .lencana.Menunggu { background:#fff4d6; color:#7a5a00; } .lencana.Terjadwal { background:#e0ecff; color:#17428c; }
+  .lencana.Menunggu { background:#fff4d6; color:#7a5a00; } .lencana.Terkonfirmasi { background:#dff5e3; color:#14622b; } .lencana.Terjadwal { background:#e0ecff; color:#17428c; }
   .lencana.Selesai { background:#e6f6ec; color:#155d33; } .lencana.Dibatalkan { background:#fdecea; color:var(--merah); }
   table { border-collapse:collapse; width:100%; }
   th, td { text-align:left; padding:8px 10px; border-bottom:1px solid #edf0f4; vertical-align:middle; }
@@ -111,6 +111,11 @@
 
     <div id="t-pengaturan" class="hidden">
       <div class="kartu" style="max-width:420px">
+        <b>Status booking baru</b>
+        <p class="muted">Aktif: booking baru langsung berstatus "Terkonfirmasi". Nonaktif: berstatus "Menunggu" sampai admin mengonfirmasi.</p>
+        <label><input type="checkbox" id="autoKonfirmasi"> Langsung terkonfirmasi</label>
+      </div>
+      <div class="kartu" style="max-width:420px">
         <b>Ganti PIN admin</b>
         <p class="muted">PIN baru 6 sampai 12 angka. Setelah diganti, perangkat lain harus login ulang.</p>
         <form id="formPin" autocomplete="off">
@@ -130,7 +135,7 @@
 <script>
 (function () {
   var LOKASI = ['Kantor Imigrasi Tegal', 'Beranda Imigrasi Brebes'];
-  var STATUS = ['Menunggu', 'Terjadwal', 'Selesai', 'Dibatalkan'];
+  var STATUS = ['Menunggu', 'Terkonfirmasi', 'Terjadwal', 'Selesai', 'Dibatalkan'];
   var auth = null, libur = [];
 
   // Semua teks dari server dimasukkan lewat textContent (nama pemohon tidak dipercaya).
@@ -319,7 +324,7 @@
   }
   function muatRekap() {
     api('/api/admin/rekap?' + qs({ dari: $('rDari').value, sampai: $('rSampai').value, lokasi: $('rLokasi').value })).then(function (rows) {
-      var kol = ['kuota', 'menunggu', 'terjadwal', 'selesai', 'dibatalkan', 'aktif'];
+      var kol = ['kuota', 'menunggu', 'terkonfirmasi', 'terjadwal', 'selesai', 'dibatalkan', 'aktif'];
       var tb = $('tbRekap'); tb.textContent = '';
       var tr = h('tr', {}, h('th', { text: 'Tanggal' }), h('th', { text: 'Lokasi' }));
       kol.forEach(function (k) { tr.appendChild(h('th', { class: 'angka', text: k.charAt(0).toUpperCase() + k.slice(1) })); });
@@ -330,7 +335,7 @@
         kol.forEach(function (k) { tot[k] += r[k]; x.appendChild(h('td', { class: 'angka', text: String(r[k]) })); });
         body.appendChild(x);
       });
-      if (!rows.length) body.appendChild(h('tr', {}, h('td', { colspan: '8', class: 'muted', text: 'Tidak ada data.' })));
+      if (!rows.length) body.appendChild(h('tr', {}, h('td', { colspan: '9', class: 'muted', text: 'Tidak ada data.' })));
       else {
         var t = h('tr', { style: 'font-weight:700' }, h('td', { text: 'Total' }), h('td', { text: '' }));
         kol.forEach(function (k) { t.appendChild(h('td', { class: 'angka', text: String(tot[k]) })); });
@@ -355,6 +360,12 @@
   function masuk() {
     api('/api/admin/otomatis').then(function (d) {
       libur = d.libur; gambarLibur();
+      var ak = $('autoKonfirmasi'); ak.checked = d.autoKonfirmasi;
+      ak.onchange = function () {
+        api('/api/admin/otomatis', { method: 'PUT', body: { autoKonfirmasi: ak.checked } })
+          .then(function (r) { pesan(r.autoKonfirmasi ? 'Booking baru langsung Terkonfirmasi.' : 'Booking baru berstatus Menunggu.'); })
+          .catch(function (e) { ak.checked = !ak.checked; gagal(e); });
+      };
       $('infoPola').textContent = 'Pola: ' + d.pola.map(function (p) {
         var hr = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
         return p.lokasi + ' ' + p.hari.map(function (i) { return hr[i]; }).join('/') + ' kuota ' + p.kuota;
