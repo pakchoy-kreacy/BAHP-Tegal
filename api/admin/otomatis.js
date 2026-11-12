@@ -1,6 +1,6 @@
 // GET: pola + libur. PUT: simpan libur. POST: isi jadwal otomatis.
 const { q } = require('../../lib/db');
-const { bacaAutoKonfirmasi } = require('../../lib/booking');
+const { bacaAutoKonfirmasi, bacaPesanDokumen } = require('../../lib/booking');
 const { route, HttpError } = require('../../lib/http');
 const { requireAdmin } = require('../../lib/auth');
 const { POLA_LAYANAN, ISI_HARI_KE_DEPAN, PESAN_DOKUMEN } = require('../../lib/config');
@@ -14,7 +14,14 @@ async function bacaLibur() {
 
 module.exports = route(['GET', 'PUT', 'POST'], async ({ req, body }) => {
   await requireAdmin(req);
-  if (req.method === 'GET') return { pola: POLA_LAYANAN, libur: await bacaLibur(), hariKeDepan: ISI_HARI_KE_DEPAN, autoKonfirmasi: await bacaAutoKonfirmasi(), pesanDokumen: PESAN_DOKUMEN };
+  if (req.method === 'GET') return { pola: POLA_LAYANAN, libur: await bacaLibur(), hariKeDepan: ISI_HARI_KE_DEPAN, autoKonfirmasi: await bacaAutoKonfirmasi(), pesanDokumen: await bacaPesanDokumen(), pesanDokumenBawaan: PESAN_DOKUMEN };
+  if (req.method === 'PUT' && body.pesanDokumen !== undefined) {
+    const teks = String(body.pesanDokumen).replace(/\r\n/g, '\n').trim();
+    if (teks.length > 2000) throw new HttpError(400, 'Teks terlalu panjang (maksimal 2000 karakter).');
+    // kosong = kembali ke teks bawaan
+    await q(`insert into pengaturan (kunci, nilai) values ('pesan_dokumen', $1) on conflict (kunci) do update set nilai = excluded.nilai`, [JSON.stringify(teks)]);
+    return { pesanDokumen: teks || PESAN_DOKUMEN };
+  }
   if (req.method === 'PUT' && body.autoKonfirmasi !== undefined) {
     const nilai = body.autoKonfirmasi === true;
     await q(`insert into pengaturan (kunci, nilai) values ('auto_konfirmasi', $1) on conflict (kunci) do update set nilai = excluded.nilai`, [JSON.stringify(nilai)]);

@@ -111,6 +111,13 @@
     </div>
 
     <div id="t-pengaturan" class="hidden">
+      <div class="kartu" style="max-width:520px">
+        <b>Teks dokumen yang harus dibawa</b>
+        <p class="muted">Tampil di tombol hijau pemohon setelah booking, dan ikut terkirim lewat tombol WhatsApp admin.</p>
+        <textarea id="teksDokumen" rows="10" maxlength="2000" style="width:100%;margin-bottom:8px" aria-label="Teks dokumen"></textarea>
+        <button type="button" id="btnSimpanDok">Simpan teks</button>
+        <button type="button" class="sek" id="btnResetDok">Kembalikan bawaan</button>
+      </div>
       <div class="kartu" style="max-width:420px">
         <b>Status booking baru</b>
         <p class="muted">Aktif: booking baru langsung berstatus "Terkonfirmasi". Nonaktif: berstatus "Menunggu" sampai admin mengonfirmasi.</p>
@@ -137,7 +144,7 @@
 (function () {
   var LOKASI = ['Kantor Imigrasi Tegal', 'Beranda Imigrasi Brebes'];
   var STATUS = ['Menunggu', 'Terkonfirmasi', 'Terjadwal', 'Selesai', 'Dibatalkan'];
-  var auth = null, libur = [], pesanDokumen = '';
+  var auth = null, libur = [], pesanDokumen = '', pesanBawaan = '';
 
   // Semua teks dari server dimasukkan lewat textContent (nama pemohon tidak dipercaya).
   function h(tag, props) {
@@ -361,7 +368,8 @@
 
   function masuk() {
     api('/api/admin/otomatis').then(function (d) {
-      libur = d.libur; gambarLibur(); pesanDokumen = d.pesanDokumen || '';
+      libur = d.libur; gambarLibur(); pesanDokumen = d.pesanDokumen || ''; pesanBawaan = d.pesanDokumenBawaan || '';
+      $('teksDokumen').value = pesanDokumen;
       var ak = $('autoKonfirmasi'); ak.checked = d.autoKonfirmasi;
       ak.onchange = function () {
         api('/api/admin/otomatis', { method: 'PUT', body: { autoKonfirmasi: ak.checked } })
@@ -392,6 +400,12 @@
   $('btnKeluar').addEventListener('click', function () {
     api('/api/admin/login', { method: 'DELETE' }).then(function () { tampilLogin('Anda sudah keluar.'); });
   });
+  function simpanDokumen(teks) {
+    api('/api/admin/otomatis', { method: 'PUT', body: { pesanDokumen: teks } })
+      .then(function (d) { pesanDokumen = d.pesanDokumen; $('teksDokumen').value = pesanDokumen; pesan('Teks dokumen disimpan.'); }).catch(gagal);
+  }
+  $('btnSimpanDok').addEventListener('click', function () { simpanDokumen($('teksDokumen').value); });
+  $('btnResetDok').addEventListener('click', function () { if (confirm('Kembalikan ke teks bawaan?')) simpanDokumen(''); });
   $('formPin').addEventListener('submit', function (e) {
     e.preventDefault();
     if ($('pinBaru').value !== $('pinUlang').value) return pesan('PIN baru dan ulangannya tidak sama.', true);

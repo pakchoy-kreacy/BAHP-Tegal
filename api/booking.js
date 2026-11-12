@@ -1,10 +1,9 @@
 // Publik: buat booking baru.
 const { route } = require('../lib/http');
 const { validasiBooking } = require('../lib/validate');
-const { buatBooking, waAdminUrl } = require('../lib/booking');
+const { buatBooking, waAdminUrl, bacaPesanDokumen } = require('../lib/booking');
 const { batasi } = require('../lib/ratelimit');
 const { todayWIB, labelTanggal } = require('../lib/tanggal');
-const { PESAN_DOKUMEN } = require('../lib/config');
 
 module.exports = route(['POST'], async ({ req, body }) => {
   await batasi(req, 'booking', 6, 600);
@@ -17,6 +16,6 @@ module.exports = route(['POST'], async ({ req, body }) => {
   return {
     kode: r.kode, nama: r.nama, jenis: r.jenis, tanggal: r.tanggal,
     tanggalLabel: labelTanggal(r.tanggal), lokasi: r.lokasi, status: r.status, waUrl: waAdminUrl(r),
-    dokumen: PESAN_DOKUMEN
+    dokumen: await bacaPesanDokumen()
   };
 });
