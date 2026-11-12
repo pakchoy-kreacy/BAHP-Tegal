@@ -85,6 +85,20 @@
   .cek .baris button { width: auto; padding: 0 18px; background: var(--navy); color: #fff; }
   .cek .info { font-size: 14px; margin: 12px 0 0; }
   .cek .info.salah { color: var(--merah); }
+  .navpil { display: flex; gap: 6px; background: #fff; border: 1px solid var(--garis); border-radius: 12px; padding: 4px; margin-bottom: 18px; }
+  .navpil a { flex: 1; text-align: center; padding: 10px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--navy); text-decoration: none; }
+  .navpil a.aktif { background: var(--navy); color: #fff; }
+  .pisah { font-size: 13px; color: var(--redup); margin: 16px 0 6px; }
+  .cek .baris2 { display: flex; gap: 8px; flex-wrap: wrap; }
+  .cek .baris2 input, .cek .baris2 select { flex: 1 1 140px; }
+  .daftar { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13.5px; }
+  .daftar td { padding: 9px 4px; border-bottom: 1px solid var(--garis); vertical-align: top; }
+  .daftar td.kd { font-weight: 600; white-space: nowrap; }
+  .daftar .lok { color: var(--redup); font-size: 12.5px; }
+  .st { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 12px; font-weight: 600; background: #eef0f4; white-space: nowrap; }
+  .st.Menunggu { background: #fff4d6; color: #7a5a00; } .st.Terkonfirmasi { background: #dff5e3; color: #14622b; }
+  .st.Terjadwal { background: #e0ecff; color: #17428c; } .st.Selesai { background: #e6f6ec; color: #155d33; } .st.Dibatalkan { background: #fdecea; color: var(--merah); }
+  .linkpantau { word-break: break-all; }
   .cek .info b { color: var(--navy); }
 
   @media (max-width: 420px) {
@@ -105,6 +119,7 @@
 </header>
 
 <main>
+  <nav class="navpil" aria-label="Menu"><a href="#" class="aktif">Booking</a><a href="#pantau">Pantau BAP</a></nav>
   <div id="viewForm">
     <section class="langkah">
       <h2><span class="no">1</span>Pilih lokasi pelayanan</h2>
@@ -154,21 +169,33 @@
       </table>
       <button type="button" id="btnDok" class="tombol btn-wa" aria-expanded="false" aria-controls="panelDok">Lihat dokumen yang harus dibawa</button>
       <div id="panelDok" class="panel-dok hidden"></div>
+      <p class="catatan">Simpan link ini untuk memantau status BAP kamu:<br><a id="linkPantau" class="linkpantau" href="#"></a></p>
       <a id="btnWa" class="tombol btn-sek" target="_blank" rel="noopener">Konfirmasi lewat WhatsApp</a>
       <p class="catatan">Kirim pesan yang sudah terisi otomatis, lalu datang sesuai hari yang dipilih dengan membawa kode booking ini.</p>
     </div>
     <button class="tombol btn-baru" onclick="location.reload()">Booking baru</button>
   </div>
 
-  <section class="langkah cek-wrap" style="margin-top:26px">
-    <h2>Cek status booking</h2>
+  <section class="langkah cek-wrap" id="pantau" style="margin-top:26px">
+    <h2>Pantau BAP</h2>
     <div class="cek">
-      <label for="kodeCek">Kode booking</label>
+      <label for="kodeCek">Cek dengan kode booking</label>
       <div class="baris">
         <input id="kodeCek" placeholder="BAP-20261120-001" autocomplete="off">
         <button type="button" class="tombol" id="btnCek" onclick="cekStatus()">Cek</button>
       </div>
       <p class="info" id="hasilCek" role="status"></p>
+      <p class="pisah">Atau lihat semua antrean BAP per hari (nama disamarkan)</p>
+      <div class="baris2">
+        <input type="date" id="tglPantau" aria-label="Tanggal">
+        <select id="lokPantau" aria-label="Lokasi">
+          <option value="">Semua lokasi</option>
+          <option>Kantor Imigrasi Tegal</option>
+          <option>Beranda Imigrasi Brebes</option>
+        </select>
+        <button type="button" class="tombol" id="btnPantau" onclick="muatPantau()" style="padding:12px;background:var(--navy);color:#fff">Lihat antrean</button>
+      </div>
+      <div id="hasilPantau" role="status"></div>
     </div>
   </section>
 </main>
@@ -292,6 +319,36 @@
       .catch(function (e) { out.className = 'info salah'; out.textContent = e.message.replace(/^Error:\s*/, ''); })
       .then(function () { btn.disabled = false; });
   }
+  function muatPantau() {
+    var t = el('tglPantau').value, out = el('hasilPantau'), btn = el('btnPantau');
+    out.textContent = '';
+    if (!t) { out.className = 'info salah'; out.textContent = 'Pilih tanggal dulu.'; return; }
+    out.className = 'info'; out.textContent = 'Memuat...'; btn.disabled = true;
+    fetch('/api/status?tanggal=' + t + '&lokasi=' + encodeURIComponent(el('lokPantau').value))
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.error);
+        var d = res.data; out.textContent = '';
+        if (!d.data.length) { out.textContent = 'Belum ada booking pada ' + d.tanggalLabel + '.'; return; }
+        var cap = document.createElement('b'); cap.textContent = d.tanggalLabel + ' · ' + d.data.length + ' pemohon'; out.appendChild(cap);
+        var tb = document.createElement('table'); tb.className = 'daftar';
+        d.data.forEach(function (x) {
+          var tr = tb.insertRow();
+          var a = tr.insertCell(); a.className = 'kd'; a.textContent = x.kode.slice(-3);
+          var b = tr.insertCell(); b.textContent = x.nama;
+          var l = document.createElement('div'); l.className = 'lok'; l.textContent = x.lokasi; b.appendChild(l);
+          var c = tr.insertCell(); var s = document.createElement('span'); s.className = 'st ' + x.status; s.textContent = x.status; c.appendChild(s);
+        });
+        out.appendChild(tb);
+      })
+      .catch(function (e) { out.className = 'info salah'; out.textContent = e.message.replace(/^Error:\s*/, ''); })
+      .then(function () { btn.disabled = false; });
+  }
+  (function () {
+    var d = new Date(Date.now() + 7 * 36e5); el('tglPantau').value = d.toISOString().slice(0, 10);
+    var k = new URLSearchParams(location.search).get('kode');
+    if (k) { el('kodeCek').value = k; cekStatus(); setTimeout(function () { el('pantau').scrollIntoView(); }, 50); }
+  })();
   el('kodeCek').addEventListener('keydown', function (e) { if (e.key === 'Enter') cekStatus(); });
 
   function kirim() {
@@ -323,6 +380,8 @@
           el('btnDok').setAttribute('aria-expanded', buka);
           el('btnDok').textContent = buka ? 'Sembunyikan dokumen' : 'Lihat dokumen yang harus dibawa';
         };
+        var lp = location.origin + '/?kode=' + encodeURIComponent(r.kode);
+        el('linkPantau').href = lp; el('linkPantau').textContent = lp;
         el('btnWa').href = r.waUrl;
         el('btnWa').textContent = r.status === 'Menunggu' ? 'Konfirmasi lewat WhatsApp' : 'Kirim detail lewat WhatsApp';
         el('viewForm').classList.add('hidden');

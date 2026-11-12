@@ -244,7 +244,8 @@
     var wa = h('button', { class: 'wa', text: 'WhatsApp', onclick: function () {
       if (!r.wa) return pesan('Nomor HP tidak valid untuk WhatsApp.', true);
       var teks = 'Halo ' + r.nama + ', kami dari BHAP Imigrasi Tegal terkait booking ' + r.kode + ' (' + r.jenis + ') pada ' + r.tanggalLabel + ' di ' + r.lokasi + '.'
-        + (r.status === 'Terkonfirmasi' || r.status === 'Terjadwal' ? '\n\n' + pesanDokumen : '');
+        + (r.status === 'Terkonfirmasi' || r.status === 'Terjadwal' ? '\n\n' + pesanDokumen : '')
+        + '\n\nPantau status BAP: ' + location.origin + '/?kode=' + r.kode;
       window.open('https://wa.me/' + r.wa + '?text=' + encodeURIComponent(teks), '_blank', 'noopener');
     } });
     return h('div', { class: 'kartu baris-p' },
