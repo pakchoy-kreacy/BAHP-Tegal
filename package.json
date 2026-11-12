@@ -3,13 +3,17 @@
   "version": "3.0.0",
   "private": true,
   "description": "BHAP! Booking Hari Acara Pemeriksaan - Vercel + Neon (Postgres)",
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "test:unit": "node --test test/unit.test.js",
     "test:db": "node --test test/integration.test.js",
     "import": "node scripts/import-csv.js"
   },
   "dependencies": {
+    "@neon/config": "^1.14.0",
+    "@neon/env": "^2.1.3",
     "pg": "^8.13.0"
   }
 }
