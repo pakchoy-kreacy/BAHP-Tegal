@@ -130,3 +130,5 @@ Tampilan publik (HP 390px) dan admin juga diuji di browser dengan Postgres lokal
 - Neon gratis cukup untuk ±300 booking/bulan. Database gratis bisa "tidur" saat sepi, jadi permintaan pertama bisa lambat ±1 detik.
 - Vercel Hobby untuk penggunaan non-komersial/pribadi. Untuk layanan instansi, periksa syarat paket yang sesuai.
 - Mengubah lokasi atau pola: ubah `lib/config.js`, lalu daftar `LOKASI` di `public/index.html` dan `public/admin.html` (nama harus persis sama).
+
+<!-- redeploy: pakai DATABASE_URL & ADMIN_PIN baru -->
