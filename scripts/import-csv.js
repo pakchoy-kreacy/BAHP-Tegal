@@ -58,8 +58,8 @@ function siapkan(pemText, jadText) {
     if (!JENIS_BAP.includes(jenis)) return err.push(`${baris} ${kode}: jenis BAP tidak dikenal (${r['JENIS BAP']})`);
     if (!status) return err.push(`${baris} ${kode}: status tidak dikenal (${r.STATUS})`);
     if (pemohon.some((p) => p.kode === kode)) return err.push(`${baris}: kode ganda ${kode}`);
-    let hp = normalisasiHp(String(r['NO HP'] || '').replace(/^="?|"$/g, ''));
-    if (!/^628\d{7,12}$/.test(hp)) warn.push(`${baris} ${kode}: nomor HP tidak standar (${r['NO HP']}) - tetap diimpor`);
+    let hp = normalisasiHp(String(r['NO HP AKTIF'] || r['NO HP'] || '').replace(/^="?|"$/g, ''));
+    if (!/^628\d{7,12}$/.test(hp)) warn.push(`${baris} ${kode}: nomor HP tidak standar (${r['NO HP AKTIF'] || r['NO HP']}) - tetap diimpor`);
     const dibuat = waktuDaftar(r['TANGGAL DAFTAR'], t);
     pemohon.push({ kode, nama: r.NAMA, hp, email: r.EMAIL || '', jenis, lokasi: lok.nama, tanggal: t, jam: r.JAM || '', status,
       petugas: r['PETUGAS PEMERIKSA'] || '', keterangan: r.KETERANGAN || '', dibuat });

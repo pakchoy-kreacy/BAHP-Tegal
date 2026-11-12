@@ -53,7 +53,7 @@
   tr.tutup td { background:#f6f7f9; color:var(--redup); }
   .chip { display:inline-flex; gap:6px; align-items:center; background:var(--emas-muda); border-radius:99px; padding:3px 6px 3px 12px; margin:3px 6px 3px 0; font-size:13px; }
   .chip button { padding:0 8px; background:transparent; color:var(--merah); font-size:16px; line-height:1.4; }
-  @media (max-width:640px) { .baris-p { grid-template-columns:1fr; } }
+  @media (max-width:640px) { .baris-p { grid-template-columns:1fr; } button, input, select { min-height:42px; } .edit select, .edit input { flex:1 1 140px; } }
 </style>
 </head>
 <body>
@@ -72,6 +72,7 @@
       <input id="pinLogin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="PIN" maxlength="64" style="width:100%;text-align:center;font-size:20px;letter-spacing:4px;margin-bottom:12px" aria-label="PIN admin">
       <button id="btnLogin" type="submit" style="width:100%">Masuk</button>
     </form>
+    <p class="muted" style="margin:14px 0 0"><a href="/" style="color:var(--navy)">Kembali ke halaman booking</a></p>
   </section>
 
   <section id="vApp" class="hidden">
@@ -216,7 +217,7 @@
     var box = $('listPemohon'); box.textContent = 'Memuat...';
     api('/api/admin/pemohon?' + qs(pFilter())).then(function (rows) {
       box.textContent = '';
-      box.appendChild(h('p', { class: 'muted', text: rows.length + ' pemohon' }));
+      box.appendChild(h('p', { class: 'muted', text: rows.length ? rows.length + ' pemohon' : 'Belum ada pemohon pada filter ini. Ubah rentang tanggal atau status, lalu tekan Tampilkan.' }));
       rows.forEach(function (r) { box.appendChild(kartuPemohon(r)); });
     }).catch(function (e) { box.textContent = ''; gagal(e); });
   }
