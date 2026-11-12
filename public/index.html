@@ -151,6 +151,7 @@
         <tr><td>Status</td><td id="hStatus"></td></tr>
       </table>
       <a id="btnWa" class="tombol btn-wa" target="_blank" rel="noopener">Konfirmasi lewat WhatsApp</a>
+      <p class="catatan" id="hDokumen" style="white-space:pre-line;text-align:left"></p>
       <p class="catatan">Kirim pesan yang sudah terisi otomatis, lalu datang sesuai hari yang dipilih dengan membawa kode booking ini.</p>
     </div>
     <button class="tombol btn-baru" onclick="location.reload()">Booking baru</button>
@@ -313,6 +314,8 @@
         el('hTanggal').textContent = r.tanggalLabel;
         el('hLokasi').textContent = r.lokasi;
         el('hStatus').textContent = r.status === 'Menunggu' ? 'Menunggu konfirmasi' : r.status;
+        el('hDokumen').textContent = r.dokumen || '';
+        el('hDokumen').classList.toggle('hidden', !r.dokumen);
         el('btnWa').href = r.waUrl;
         el('btnWa').textContent = r.status === 'Menunggu' ? 'Konfirmasi lewat WhatsApp' : 'Kirim detail lewat WhatsApp';
         el('viewForm').classList.add('hidden');

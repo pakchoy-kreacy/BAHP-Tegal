@@ -137,7 +137,7 @@
 (function () {
   var LOKASI = ['Kantor Imigrasi Tegal', 'Beranda Imigrasi Brebes'];
   var STATUS = ['Menunggu', 'Terkonfirmasi', 'Terjadwal', 'Selesai', 'Dibatalkan'];
-  var auth = null, libur = [];
+  var auth = null, libur = [], pesanDokumen = '';
 
   // Semua teks dari server dimasukkan lewat textContent (nama pemohon tidak dipercaya).
   function h(tag, props) {
@@ -236,7 +236,8 @@
     });
     var wa = h('button', { class: 'wa', text: 'WhatsApp', onclick: function () {
       if (!r.wa) return pesan('Nomor HP tidak valid untuk WhatsApp.', true);
-      var teks = 'Halo ' + r.nama + ', kami dari BHAP Imigrasi Tegal terkait booking ' + r.kode + ' (' + r.jenis + ') pada ' + r.tanggalLabel + ' di ' + r.lokasi + '.';
+      var teks = 'Halo ' + r.nama + ', kami dari BHAP Imigrasi Tegal terkait booking ' + r.kode + ' (' + r.jenis + ') pada ' + r.tanggalLabel + ' di ' + r.lokasi + '.'
+        + (r.status === 'Terkonfirmasi' || r.status === 'Terjadwal' ? '\n\n' + pesanDokumen : '');
       window.open('https://wa.me/' + r.wa + '?text=' + encodeURIComponent(teks), '_blank', 'noopener');
     } });
     return h('div', { class: 'kartu baris-p' },
@@ -360,7 +361,7 @@
 
   function masuk() {
     api('/api/admin/otomatis').then(function (d) {
-      libur = d.libur; gambarLibur();
+      libur = d.libur; gambarLibur(); pesanDokumen = d.pesanDokumen || '';
       var ak = $('autoKonfirmasi'); ak.checked = d.autoKonfirmasi;
       ak.onchange = function () {
         api('/api/admin/otomatis', { method: 'PUT', body: { autoKonfirmasi: ak.checked } })

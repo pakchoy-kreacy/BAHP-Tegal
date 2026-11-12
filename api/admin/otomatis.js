@@ -3,7 +3,7 @@ const { q } = require('../../lib/db');
 const { bacaAutoKonfirmasi } = require('../../lib/booking');
 const { route, HttpError } = require('../../lib/http');
 const { requireAdmin } = require('../../lib/auth');
-const { POLA_LAYANAN, ISI_HARI_KE_DEPAN } = require('../../lib/config');
+const { POLA_LAYANAN, ISI_HARI_KE_DEPAN, PESAN_DOKUMEN } = require('../../lib/config');
 const { rencanaJadwal } = require('../../lib/jadwal-auto');
 const { todayWIB, validIso } = require('../../lib/tanggal');
 
@@ -14,7 +14,7 @@ async function bacaLibur() {
 
 module.exports = route(['GET', 'PUT', 'POST'], async ({ req, body }) => {
   await requireAdmin(req);
-  if (req.method === 'GET') return { pola: POLA_LAYANAN, libur: await bacaLibur(), hariKeDepan: ISI_HARI_KE_DEPAN, autoKonfirmasi: await bacaAutoKonfirmasi() };
+  if (req.method === 'GET') return { pola: POLA_LAYANAN, libur: await bacaLibur(), hariKeDepan: ISI_HARI_KE_DEPAN, autoKonfirmasi: await bacaAutoKonfirmasi(), pesanDokumen: PESAN_DOKUMEN };
   if (req.method === 'PUT' && body.autoKonfirmasi !== undefined) {
     const nilai = body.autoKonfirmasi === true;
     await q(`insert into pengaturan (kunci, nilai) values ('auto_konfirmasi', $1) on conflict (kunci) do update set nilai = excluded.nilai`, [JSON.stringify(nilai)]);
